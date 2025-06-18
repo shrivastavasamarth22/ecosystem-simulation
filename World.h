@@ -9,6 +9,7 @@ class World {
   private:
     int width;
     int height;
+    int turn_count;
     std::vector<std::unique_ptr<Animal>> animals;
 
     void cleanup();
