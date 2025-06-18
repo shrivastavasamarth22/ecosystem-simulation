@@ -3,8 +3,7 @@
 
 #include <memory>
 
-// Forward declaration to avoid circular include with World.h
-
+// Forward declaration to avoid circular include with World.
 class World;
 
 class Animal {
