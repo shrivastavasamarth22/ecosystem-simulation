@@ -6,8 +6,8 @@
 int main() {
   const int WORLD_WIDTH = 40;
   const int WORLD_HEIGHT = 20;
-  const int INITIAL_HERBIVORES = 30;
-  const int INITIAL_CARNIVORES = 8;
+  const int INITIAL_HERBIVORES = 50;
+  const int INITIAL_CARNIVORES = 20;
   const int SIMULATION_SPEED_MS = 200; // 200ms per turn
 
   World world(WORLD_WIDTH, WORLD_HEIGHT);

@@ -1,9 +1,10 @@
-#include "Herboviore.h"
+#include "Herbivore.h"
 
+// Define constants for behavior
 const int HERBIVORE_STARTING_ENERGY = 10;
 const int HERBIVORE_REPRODUCE_ENERGY = 15;
 const int HERBIVORE_MAX_AGE = 50;
-const int HERBIVORE_ENERGY_GAIN = 1; // Gained from eating grass
+const int HERBIVORE_ENERGY_GAIN = 1; // Gains energy from "grass"
 
 Herbivore::Herbivore(int x, int y)
   : Animal(x, y, HERBIVORE_STARTING_ENERGY, 'H') {}
@@ -22,8 +23,8 @@ void Herbivore::update(World& world) {
 
 std::unique_ptr<Animal> Herbivore::reproduce() {
   if (energy > HERBIVORE_REPRODUCE_ENERGY) {
-    energy -= (HERBIVORE_REPRODUCE_ENERGY / 2);
-    return std::make_unique<Herbivore>(x, y);
+    energy -= (HERBIVORE_REPRODUCE_ENERGY / 2); // Cost of reproducing
+    return std::make_unique<Herbivore>(x, y); // Create a new herbivore at the same location
   }
   return nullptr;
 }
