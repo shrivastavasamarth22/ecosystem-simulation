@@ -8,19 +8,25 @@ const int HERBIVORE_HP = 30;
 const int HERBIVORE_BASE_DMG = 2;
 const int HERBIVORE_BASE_SIGHT = 7;
 const int HERBIVORE_BASE_SPEED = 1;
-const int HERBIVORE_MAX_ENERGY = 50; // New
-const int HERBIVORE_STARTING_ENERGY = 30;
-const int HERBIVORE_REPRODUCE_ENERGY_COST = 15; // Renamed for clarity
+const int HERBIVORE_MAX_ENERGY = 50;
+const int HERBIVORE_STARTING_ENERGY = 30; // Starts with a decent amount
+const int HERBIVORE_REPRODUCE_ENERGY_COST = 15; // Cost to reproduce
+
+// New/Adjusted constants for easier reproduction
+const int HERBIVORE_GRAZE_ENERGY_GAIN = 2;      // << INCREASED: Gain more from grazing
+const float HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.60f; // << LOWERED: Need 60% of max energy
+const int HERBIVORE_MIN_REPRODUCE_AGE = 3;       // << LOWERED: Can reproduce at age > 3
+
 
 Herbivore::Herbivore(int x, int y)
     : Animal(x, y, 'H', HERBIVORE_HP, HERBIVORE_BASE_DMG, HERBIVORE_BASE_SIGHT, HERBIVORE_BASE_SPEED,
              HERBIVORE_MAX_ENERGY, HERBIVORE_STARTING_ENERGY) {}
 
 void Herbivore::updateAI(World& world) {
-    target = nullptr;
+    target = nullptr; // Reset target each turn
 
-    auto predators = world.getAnimalsNear<Carnivore>(x, y, getCurrentSightRadius()); // Use current sight
-    auto omni_predators = world.getAnimalsNear<Omnivore>(x, y, getCurrentSightRadius()); // Use current sight
+    auto predators = world.getAnimalsNear<Carnivore>(x, y, getCurrentSightRadius());
+    auto omni_predators = world.getAnimalsNear<Omnivore>(x, y, getCurrentSightRadius());
     predators.insert(predators.end(), omni_predators.begin(), omni_predators.end());
 
     if (!predators.empty()) {
@@ -28,35 +34,44 @@ void Herbivore::updateAI(World& world) {
         target = predators[0];
     } else {
         current_state = AIState::WANDERING;
-        if (energy < max_energy) energy++; // Graze, but don't exceed max energy
+        // Graze if wandering and not full on energy
+        if (energy < max_energy) {
+            energy += HERBIVORE_GRAZE_ENERGY_GAIN; // Use the new constant for grazing
+            energy = std::min(energy, max_energy); // Cap at max_energy
+        }
     }
 }
 
 void Herbivore::act(World& world) {
+    // Check if target died or disappeared
     if (target && target->isDead()) {
         target = nullptr;
-        current_state = AIState::WANDERING;
+        current_state = AIState::WANDERING; // Revert to wandering if target is gone
     }
 
     switch (current_state) {
         case AIState::FLEEING:
             if (target) {
                 moveAwayFrom(world, target->getX(), target->getY());
+            } else { // Should not happen if target is properly managed, but as a fallback
+                moveRandom(world);
             }
             break;
         case AIState::WANDERING:
             moveRandom(world);
             break;
-        default:
+        default: // Should not reach here
             moveRandom(world);
             break;
     }
 }
 
 std::unique_ptr<Animal> Herbivore::reproduce() {
-    if (energy > HERBIVORE_MAX_ENERGY * 0.75 && age > 5) { // Reproduce if energy is high and old enough
-        energy -= HERBIVORE_REPRODUCE_ENERGY_COST;
-        return std::make_unique<Herbivore>(x, y);
+    // Check if energy is above the new threshold and age is sufficient
+    if (energy > static_cast<int>(max_energy * HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE) &&
+        age > HERBIVORE_MIN_REPRODUCE_AGE) {
+        energy -= HERBIVORE_REPRODUCE_ENERGY_COST; // Deduct energy cost
+        return std::make_unique<Herbivore>(x, y); // Create a new herbivore
     }
-    return nullptr;
+    return nullptr; // Cannot reproduce
 }
