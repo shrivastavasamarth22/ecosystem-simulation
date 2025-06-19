@@ -10,11 +10,11 @@ int main() {
     const int WORLD_HEIGHT = 40;
 
     // A higher number of herbivores provides a stable food source.
-    const int INITIAL_HERBIVORES = 80;
+    const int INITIAL_HERBIVORES = 20;
     // Omnivores are versatile but need numbers to be effective hunters.
-    const int INITIAL_OMNIVORES = 15;
+    const int INITIAL_OMNIVORES = 5;
     // Carnivores are powerful but few in number, as they require a lot of food.
-    const int INITIAL_CARNIVORES = 5;
+    const int INITIAL_CARNIVORES = 3;
 
     // Controls the speed of the simulation (milliseconds per turn).
     const int SIMULATION_SPEED_MS = 500;

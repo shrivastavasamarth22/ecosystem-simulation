@@ -9,7 +9,7 @@ const int HERBIVORE_DMG = 2;
 const int HERBIVORE_SIGHT = 7;
 const int HERBIVORE_SPEED = 1;
 const int HERBIVORE_ENERGY = 10;
-const int HERBIVORE_REPRODUCE_ENERGY = 15;
+const int HERBIVORE_REPRODUCE_ENERGY = 10;
 
 Herbivore::Herbivore(int x, int y)
     : Animal(x, y, 'H', HERBIVORE_HP, HERBIVORE_DMG, HERBIVORE_SIGHT, HERBIVORE_SPEED, HERBIVORE_ENERGY) {}
