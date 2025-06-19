@@ -1,6 +1,7 @@
 #include "World.h"
-#include "Herboviore.h"
+#include "Herbivore.h"
 #include "Carnivore.h"
+#include "Omnivore.h"
 #include <iostream>
 #include <vector>
 #include <random>
@@ -12,7 +13,8 @@ extern std::mt19937 rng;
 
 World::World(int w, int h) : width(w), height(h), turn_count(0) {}
 
-void World::init(int initial_herbivores, int initial_carnivores) {
+void World::init(int initial_herbivores, int initial_carnivores, int initial_omnivores) {
+  animals.clear();
   std::uniform_int_distribution<int> distX(0, width - 1);
   std::uniform_int_distribution<int> distY(0, height - 1);
 
@@ -22,12 +24,16 @@ void World::init(int initial_herbivores, int initial_carnivores) {
   for (int i = 0; i < initial_carnivores; ++i) {
     animals.push_back(std::make_unique<Carnivore>(distX(rng), distY(rng)));
   }
+  for (int i = 0; i < initial_omnivores; ++i) {
+    animals.push_back(std::make_unique<Omnivore>(distX(rng), distY(rng)));
+  }
 }
 
 void World::update() {
   turn_count++;
 
-  // Update, move, and handle reproduction for all animals
+  std::shuffle(animals.begin(), animals.end(), rng);
+
   std::vector<std::unique_ptr<Animal>> new_animals;
   for (auto& animal : animals) {
     if (!animal->isDead()) {
@@ -41,13 +47,12 @@ void World::update() {
     }
   }
 
-
-  // Add newborns to the world
   for (auto& newborn : new_animals) {
     animals.push_back(std::move(newborn));
   }
 
   cleanup();
+
 }
 
 void World::cleanup() {
@@ -59,39 +64,29 @@ void World::cleanup() {
   );
 }
 
-std::vector<Animal*> World::getHerbivoresNear(int x, int y, int radius) {
-  std::vector<Animal*> nearby;
-  for (const auto& animal: animals) {
-    if (dynamic_cast<Herbivore*>(animal.get())) {
-      if (!animal->isDead()) {
-        int dx = animal->getX() - x;
-        int dy = animal->getY() - y;
-        if (dx * dx + dy * dy <= radius * radius) {
-          nearby.push_back(animal.get());
-        }
-      }
-    }
-  }
-  return nearby;
-}
-
 void World::draw() const {
   std::vector<std::vector<char>> grid (height, std::vector<char>(width, '.'));
 
   int herbivore_count = 0;
   int carnivore_count = 0;
+  int omnivore_count = 0;
 
   for (const auto& animal : animals) {
     if (!animal->isDead()) {
-      grid[animal->getY()][animal->getX()] = animal->getSymbol();
-      if(animal->getSymbol() == 'H') {
+      if (grid[animal->getY()][animal->getX()] == '.') {
+        grid[animal->getY()][animal->getX()] = animal->getSymbol();
+      }
+
+      if (animal->getSymbol() == 'H') {
         herbivore_count++;
-      } 
-      if(animal->getSymbol() == 'W') {
+      } else if (animal->getSymbol() == 'W') {
         carnivore_count++;
+      } else if (animal->getSymbol() == 'O') {
+        omnivore_count++;
       }
     }
   }
+
 
   // Clear screen (simple cross-platform way)
   #ifdef _WIN32
@@ -110,15 +105,28 @@ void World::draw() const {
   std::cout << "--------------------------------" << std::endl;
   std::cout << "Turn: " << turn_count
     << " | Herbivores (H): " << herbivore_count
-    << " | Carnivores (W): " << carnivore_count << std::endl;
+    << " | Carnivores (W): " << carnivore_count
+    << " | Omnivores (O): " << omnivore_count << std::endl;
 }
 
-bool World::isExtinct() const {
+bool World::isEcosystemCollapsed() const {
   int herbivore_count = 0;
   int carnivore_count = 0;
+  int omnivore_count = 0;
+
+
   for (const auto& animal : animals) {
-    if (dynamic_cast<Herbivore*>(animal.get())) herbivore_count++;
-    if (dynamic_cast<Carnivore*>(animal.get())) carnivore_count++;
+    if (dynamic_cast<Herbivore*>(animal.get())) {
+      herbivore_count++;
+    } else if (dynamic_cast<Carnivore*>(animal.get())) {
+      carnivore_count++;
+    } else if (dynamic_cast<Omnivore*>(animal.get())) {
+      omnivore_count++;
+    }
   }
-  return herbivore_count == 0 || carnivore_count == 0;
+  if (herbivore_count == 0 && omnivore_count == 0) return true;
+  if (carnivore_count + omnivore_count == 0) return true;
+  if (herbivore_count + carnivore_count == 0) return true;
+
+  return animals.empty();
 }
