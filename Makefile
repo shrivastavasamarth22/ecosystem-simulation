@@ -5,8 +5,8 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -g
 # Target executable name
 TARGET = simulation
 
-# Source files
-SOURCES = main.cpp World.cpp Animal.cpp Herbivore.cpp Carnivore.cpp
+# Source files (add Omnivore.cpp)
+SOURCES = main.cpp World.cpp Animal.cpp Herbivore.cpp Carnivore.cpp Omnivore.cpp
 
 # Object files are derived from source files
 OBJECTS = $(SOURCES:.cpp=.o)

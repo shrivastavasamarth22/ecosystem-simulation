@@ -6,19 +6,20 @@
 int main() {
   const int WORLD_WIDTH = 40;
   const int WORLD_HEIGHT = 20;
-  const int INITIAL_HERBIVORES = 50;
-  const int INITIAL_CARNIVORES = 20;
-  const int SIMULATION_SPEED_MS = 200; // 200ms per turn
+  const int INITIAL_HERBIVORES = 25;
+  const int INITIAL_CARNIVORES = 5;
+  const int INITIAL_OMNIVORES = 10; // Add omnivores
+  const int SIMULATION_SPEED_MS = 500;
 
   World world(WORLD_WIDTH, WORLD_HEIGHT);
-  world.init(INITIAL_HERBIVORES, INITIAL_CARNIVORES);
+  world.init(INITIAL_HERBIVORES, INITIAL_CARNIVORES, INITIAL_OMNIVORES);
 
-  int max_turns = 500;
+  int max_turns = 1000;
   for (int i = 0; i < max_turns; ++i) {
     world.draw();
     
-    if (world.isExtinct()) {
-      std::cout << "A population has gone extinct. Simulation over." << std::endl;
+    if (world.isEcosystemCollapsed()) {
+      std::cout << "The ecosystem has collapsed. Simulation over" << std::endl;
       break;
     }
     
@@ -26,10 +27,12 @@ int main() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(SIMULATION_SPEED_MS));
   }
-  
-  if (!world.isExtinct()) {
-    std::cout << "Simulation reached max turns." << std::endl;
+
+  world.draw();
+  if (!world.isEcosystemCollapsed()) {
+    std::cout << "Simulation reached max turns." << std::endl; 
   }
 
   return 0;
+
 }
