@@ -15,6 +15,9 @@ Herbivore::Herbivore(int x, int y)
     : Animal(x, y, 'H', HERBIVORE_HP, HERBIVORE_DMG, HERBIVORE_SIGHT, HERBIVORE_SPEED, HERBIVORE_ENERGY) {}
 
 void Herbivore::updateAI(World& world) {
+    // Proactively reset state. This prevents dangling pointers from the previous turn.
+    target = nullptr;
+
     // Check for predators
     auto predators = world.getAnimalsNear<Carnivore>(x, y, sight_radius);
     auto omni_predators = world.getAnimalsNear<Omnivore>(x, y, sight_radius);
@@ -23,23 +26,24 @@ void Herbivore::updateAI(World& world) {
     if (!predators.empty()) {
         current_state = AIState::FLEEING;
         target = predators[0]; // Flee from the first one seen
-        return;
+    } else {
+        // If no threats, just wander and graze
+        current_state = AIState::WANDERING;
+        energy++;
     }
-
-    // If no threats, just wander
-    current_state = AIState::WANDERING;
-    target = nullptr;
-    energy++; // Graze
 }
 
 void Herbivore::act(World& world) {
+    // Double-check target validity before acting
+    if (target && target->isDead()) {
+        target = nullptr;
+        current_state = AIState::WANDERING;
+    }
+
     switch (current_state) {
         case AIState::FLEEING:
-            if (target && !target->isDead()) {
+            if (target) {
                 moveAwayFrom(target->getX(), target->getY());
-            } else {
-                // Target is gone, go back to wandering
-                current_state = AIState::WANDERING;
             }
             break;
         case AIState::WANDERING:

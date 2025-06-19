@@ -16,6 +16,9 @@ Carnivore::Carnivore(int x, int y)
     : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_DMG, CARNIVORE_SIGHT, CARNIVORE_SPEED, CARNIVORE_ENERGY) {}
 
 void Carnivore::updateAI(World& world) {
+    // Proactively reset state
+    target = nullptr;
+
     // Priority 1: Flee from Omnivore packs
     auto omnivores = world.getAnimalsNear<Omnivore>(x, y, sight_radius);
     if (omnivores.size() >= OMNIVORE_PACK_THREAT_SIZE) {
@@ -34,14 +37,18 @@ void Carnivore::updateAI(World& world) {
 
     // If nothing else, wander
     current_state = AIState::WANDERING;
-    target = nullptr;
 }
 
 void Carnivore::act(World& world) {
+    // Double-check target validity before acting
+    if (target && target->isDead()) {
+        target = nullptr;
+        current_state = AIState::WANDERING;
+    }
+
     switch (current_state) {
         case AIState::CHASING:
-            if (target && !target->isDead()) {
-                // Check if adjacent to attack
+            if (target) {
                 int dx = std::abs(x - target->getX());
                 int dy = std::abs(y - target->getY());
                 if (dx <= 1 && dy <= 1) {
@@ -55,7 +62,7 @@ void Carnivore::act(World& world) {
             }
             break;
         case AIState::FLEEING:
-            if (target && !target->isDead()) {
+            if (target) {
                 moveAwayFrom(target->getX(), target->getY());
             }
             break;

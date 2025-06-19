@@ -16,22 +16,23 @@ Omnivore::Omnivore(int x, int y)
     : Animal(x, y, 'O', OMNIVORE_HP, OMNIVORE_DMG, OMNIVORE_SIGHT, OMNIVORE_SPEED, OMNIVORE_ENERGY) {}
 
 void Omnivore::updateAI(World& world) {
-    // Priority 1: Hunt Carnivores in packs
+    // Proactively reset state
+    target = nullptr;
+
+    // Priority 1: Hunt Carnivores in packs or flee if alone
     auto carnivores = world.getAnimalsNear<Carnivore>(x, y, sight_radius);
     if (!carnivores.empty()) {
         auto allies = world.getAnimalsNear<Omnivore>(x, y, sight_radius);
         if (allies.size() >= OMNIVORE_PACK_HUNT_SIZE) {
             current_state = AIState::PACK_HUNTING;
             target = carnivores[0];
-            return;
         } else {
-            // Not enough allies, flee!
             current_state = AIState::FLEEING;
             target = carnivores[0];
-            return;
         }
+        return;
     }
-    
+
     // Priority 2: Hunt Herbivores
     auto herbivores = world.getAnimalsNear<Herbivore>(x, y, sight_radius);
     if (!herbivores.empty()) {
@@ -42,20 +43,20 @@ void Omnivore::updateAI(World& world) {
 
     // If nothing else, wander and graze
     current_state = AIState::WANDERING;
-    target = nullptr;
     energy++;
 }
 
 void Omnivore::act(World& world) {
-     if (target && target->isDead()) {
+    // THIS IS THE CRITICAL FIX: Check if target is dead or became null
+    if (target && target->isDead()) {
         target = nullptr;
         current_state = AIState::WANDERING;
     }
 
     switch (current_state) {
-        case AIState::PACK_HUNTING: // Same logic as chasing
+        case AIState::PACK_HUNTING:
         case AIState::CHASING:
-            if (target) {
+            if (target) { // Check if target exists before using it
                 int dx = std::abs(x - target->getX());
                 int dy = std::abs(y - target->getY());
                 if (dx <= 1 && dy <= 1) {
@@ -69,7 +70,7 @@ void Omnivore::act(World& world) {
             }
             break;
         case AIState::FLEEING:
-            if (target) {
+            if (target) { // Check if target exists before using it
                 moveAwayFrom(target->getX(), target->getY());
             }
             break;
