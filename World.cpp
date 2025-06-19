@@ -57,8 +57,8 @@ void World::update() {
     std::vector<std::unique_ptr<Animal>> new_animals;
     for (auto& animal : animals) {
         if (!animal->isDead()) {
-            // Apply aging and passive energy loss
-            animal->postTurnUpdate();
+            // Apply aging, hunger, regeneration, and passive energy loss
+            animal->postTurnUpdate(*this); // Pass world object
 
             // Check for reproduction
             auto newborn = animal->reproduce();

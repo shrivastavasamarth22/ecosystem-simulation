@@ -5,37 +5,36 @@
 
 // --- Balancing Constants ---
 const int CARNIVORE_HP = 80;
-const int CARNIVORE_DMG = 25;
-const int CARNIVORE_SIGHT = 5;
-const int CARNIVORE_SPEED = 2; // Faster than herbivores
-const int CARNIVORE_ENERGY = 20;
-const int CARNIVORE_REPRODUCE_ENERGY = 35;
+const int CARNIVORE_BASE_DMG = 25;
+const int CARNIVORE_BASE_SIGHT = 5;
+const int CARNIVORE_BASE_SPEED = 2;
+const int CARNIVORE_MAX_ENERGY = 100; // New
+const int CARNIVORE_STARTING_ENERGY = 70;
+const int CARNIVORE_REPRODUCE_ENERGY_COST = 35;
 const int OMNIVORE_PACK_THREAT_SIZE = 3;
+const int ENERGY_FROM_KILL = 40;
 
 Carnivore::Carnivore(int x, int y)
-    : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_DMG, CARNIVORE_SIGHT, CARNIVORE_SPEED, CARNIVORE_ENERGY) {}
+    : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_BASE_DMG, CARNIVORE_BASE_SIGHT, CARNIVORE_BASE_SPEED,
+             CARNIVORE_MAX_ENERGY, CARNIVORE_STARTING_ENERGY) {}
 
 void Carnivore::updateAI(World& world) {
-    // Proactively reset state
     target = nullptr;
 
-    // Priority 1: Flee from Omnivore packs
-    auto omnivores = world.getAnimalsNear<Omnivore>(x, y, sight_radius);
+    auto omnivores = world.getAnimalsNear<Omnivore>(x, y, getCurrentSightRadius()); // Use current sight
     if (omnivores.size() >= OMNIVORE_PACK_THREAT_SIZE) {
         current_state = AIState::FLEEING;
         target = omnivores[0];
         return;
     }
 
-    // Priority 2: Hunt Herbivores
-    auto prey = world.getAnimalsNear<Herbivore>(x, y, sight_radius);
+    auto prey = world.getAnimalsNear<Herbivore>(x, y, getCurrentSightRadius()); // Use current sight
     if (!prey.empty()) {
         current_state = AIState::CHASING;
         target = prey[0];
         return;
     }
 
-    // If nothing else, wander
     current_state = AIState::WANDERING;
 }
 
@@ -51,19 +50,17 @@ void Carnivore::act(World& world) {
                 int dx = std::abs(x - target->getX());
                 int dy = std::abs(y - target->getY());
                 if (dx <= 1 && dy <= 1) {
-                    target->takeDamage(damage);
+                    target->takeDamage(getCurrentDamage()); // Use current damage
                     if (target->isDead()) {
-                        energy += 20;
+                        energy = std::min(max_energy, energy + ENERGY_FROM_KILL); // Gain energy, cap at max
                     }
                 } else {
-                    // Pass the world object to the movement function
                     moveTowards(world, target->getX(), target->getY());
                 }
             }
             break;
         case AIState::FLEEING:
             if (target) {
-                // Pass the world object to the movement function
                 moveAwayFrom(world, target->getX(), target->getY());
             }
             break;
@@ -77,8 +74,8 @@ void Carnivore::act(World& world) {
 }
 
 std::unique_ptr<Animal> Carnivore::reproduce() {
-    if (energy > CARNIVORE_REPRODUCE_ENERGY) {
-        energy /= 2;
+    if (energy > CARNIVORE_MAX_ENERGY * 0.75 && age > 10) {
+        energy -= CARNIVORE_REPRODUCE_ENERGY_COST;
         return std::make_unique<Carnivore>(x, y);
     }
     return nullptr;
