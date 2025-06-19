@@ -1,31 +1,35 @@
-# Ecosystem Simulation
+# Intelligent Ecosystem Simulation
 
-A C++ ecosystem simulation that models complex predator-prey dynamics between herbivores, carnivores, and omnivores in a 2D world.
+A C++ simulation that models complex predator-prey dynamics using **state-driven intelligent agents** in a 2D world.
 
 ## Overview
 
-This project simulates a complex ecosystem where herbivores feed on grass, carnivores hunt other animals, and omnivores can both graze and hunt. The simulation demonstrates emergent behaviors and population dynamics through simple rules governing movement, feeding, reproduction, and death.
+This project simulates a dynamic ecosystem where each creature is an autonomous agent governed by a set of attributes and an AI state machine. Unlike simple rule-based systems, animals in this simulation perceive their environment and make decisions based on their current state—whether they are wandering, chasing prey, fleeing from a threat, or hunting in a pack.
+
+This attribute-driven design (Health, Damage, Speed, Sight) and state-based AI lead to complex and unpredictable **emergent behaviors**, creating a more realistic and engaging simulation of population dynamics.
 
 ## Features
 
-- **Real-time ASCII visualization** of the ecosystem
-- **Dynamic population tracking** of herbivores (H), carnivores (C), and omnivores (O)
-- **Autonomous animal behavior** with movement, feeding, and reproduction
-- **Energy-based survival system**
-- **Age-based mortality**
-- **Three distinct species with unique behaviors**
-- **Configurable simulation parameters**
+- **Intelligent Agent-Based AI:** Animals aren't just moving randomly; they perceive their surroundings and react with purpose.
+- **Finite State Machine (FSM):** Each animal operates in a specific state (`WANDERING`, `FLEEING`, `CHASING`, `PACK_HUNTING`), dictating its actions.
+- **Attribute-Driven System:** Every animal has unique stats for **Health, Damage, Speed, and Sight**, creating deep and tunable species differentiation.
+- **Complex AI Behaviors:**
+    - **Fleeing:** Herbivores and outnumbered animals will actively run from threats.
+    - **Chasing:** Predators will lock onto and pursue prey.
+    - **Pack Hunting:** Omnivores can form groups to take down stronger Carnivores, and Carnivores will flee from these packs.
+- **Real-time ASCII Visualization:** The world is rendered in the console, with live-updating population counts.
+- **Extensible Object-Oriented Design:** The class structure makes it easy to add new species or modify existing behaviors.
 
 ## Project Structure
 
 ```
 ecosystem-simulation/
-├── main.cpp           # Entry point and simulation loop
-├── World.h/.cpp       # World management and rendering
-├── Animal.h/.cpp      # Base animal class with common behaviors
-├── Herbivore.h/.cpp   # Herbivore-specific behaviors
-├── Carnivore.h/.cpp   # Carnivore-specific behaviors
-├── Omnivore.h/.cpp    # Omnivore-specific behaviors
+├── main.cpp           # Entry point, simulation loop, and parameters
+├── World.h/.cpp       # Manages the grid, all animals, and the update cycle
+├── Animal.h/.cpp      # Abstract base class with core attributes and AI state
+├── Herbivore.h/.cpp   # Herbivore implementation (fleeing behavior)
+├── Carnivore.h/.cpp   # Carnivore implementation (chasing/fleeing behavior)
+├── Omnivore.h/.cpp    # Omnivore implementation (pack hunting behavior)
 ├── Makefile           # Build configuration
 ├── LICENSE            # MIT License
 └── README.md          # This file
@@ -34,124 +38,96 @@ ecosystem-simulation/
 ## Building and Running
 
 ### Prerequisites
-- C++17 compatible compiler (g++, clang++)
-- Make (optional, for using Makefile)
+- A C++17 compatible compiler (e.g., g++, clang++)
+- The `make` utility (recommended)
 
 ### Build with Make
 ```bash
-make
+# Clean previous builds and compile
+make clean && make
 ```
 
-### Build manually
+### Build Manually
 ```bash
 g++ -std=c++17 -Wall -Wextra -g -o simulation main.cpp World.cpp Animal.cpp Herbivore.cpp Carnivore.cpp Omnivore.cpp
 ```
 
-### Run the simulation
+### Run the Simulation
 ```bash
 ./simulation
 ```
 
-## Simulation Rules
+## Core Mechanics & AI Behavior
 
-### Herbivores (H)
-- Start with 10 energy points
-- Gain 1 energy per turn from "grazing"
-- Reproduce when energy reaches 15 (costs energy)
-- Die of old age at 50 turns or when energy reaches 0
-- Move randomly around the world
+The old energy-based system has been replaced by a more robust attribute and AI system.
 
-### Carnivores (C)
-- Hunt herbivores and omnivores for energy
-- Must catch prey to survive
-- Reproduce when they have sufficient energy
-- Die of old age or starvation
-- Move randomly but hunt nearby prey
+### Core Attributes
+- **Health (HP):** An animal's life force. It dies when HP reaches 0.
+- **Damage:** The amount of HP an animal inflicts when it attacks.
+- **Sight Radius:** The distance an animal can "see" to detect prey or predators.
+- **Speed:** The number of tiles an animal can move per turn.
+- **Energy:** No longer tied to life. It is now used as "stamina" for reproduction and passive survival cost.
 
-### Omnivores (O)
-- Can both graze like herbivores and hunt like carnivores
-- Flexible feeding strategy provides survival advantages
-- Reproduce when they have sufficient energy
-- Die of old age or starvation
-- Move randomly and opportunistically feed
+### Species-Specific AI
 
-### World Environment
-- 40x20 grid by default
-- Wrapping boundaries (animals can move off edges)
-- Empty spaces represent "grass" for herbivores and omnivores
-- Real-time display updates every 200ms
+- **Herbivores (H):**
+    - **Defensive:** Possess a large sight radius to detect danger early.
+    - **Behavior:** Their primary AI state is `FLEEING` from any predator that enters their sight. Otherwise, they are `WANDERING` and grazing (gaining energy).
 
-## Configuration
+- **Carnivores (C):**
+    - **Apex Predators:** High damage and speed make them lethal hunters.
+    - **Behavior:** They will `CHASE` any Herbivore they see. However, they are smart enough to recognize a threat and will `FLEE` from an Omnivore pack.
 
-Key simulation parameters can be modified in [`main.cpp`](main.cpp):
+- **Omnivores (O):**
+    - **Opportunists:** The most complex AI. Their behavior depends on the situation.
+    - **Behavior:** They will `CHASE` lone Herbivores. If they spot a Carnivore, they will assess the situation: if enough allied Omnivores are nearby, they will switch to `PACK_HUNTING`; if outnumbered, they will `FLEE`.
 
+## Configuration & Balancing
+
+Initial population counts and world size can be modified in `main.cpp`:
 ```cpp
-const int WORLD_WIDTH = 40;          // World width
-const int WORLD_HEIGHT = 20;         // World height  
-const int INITIAL_HERBIVORES = 50;   // Starting herbivore population
-const int INITIAL_CARNIVORES = 20;   // Starting carnivore population
-const int INITIAL_OMNIVORES = 15;    // Starting omnivore population
-const int SIMULATION_SPEED_MS = 200; // Update interval in milliseconds
+const int WORLD_WIDTH = 50;
+const int WORLD_HEIGHT = 25;
+const int INITIAL_HERBIVORES = 40;
+const int INITIAL_OMNIVORES = 15;
+const int INITIAL_CARNIVORES = 5;
 ```
-
-Animal behavior constants are defined in their respective implementation files:
-- [`Herbivore.cpp`](Herbivore.cpp) - herbivore parameters
-- [`Carnivore.cpp`](Carnivore.cpp) - carnivore parameters
-- [`Omnivore.cpp`](Omnivore.cpp) - omnivore parameters
+The core balance of the ecosystem is determined by the attribute constants defined at the top of each animal's implementation file (e.g., `Carnivore.cpp`, `Herbivore.cpp`). Tweaking these values will have a dramatic impact on the simulation's outcome.
 
 ## Class Hierarchy
 
+The simulation uses a clear polymorphic hierarchy.
 ```
 Animal (abstract base class)
-├── Herbivore
-├── Carnivore
-└── Omnivore
+ |
+ +-- Herbivore
+ +-- Carnivore
+ +-- Omnivore
 ```
-
-The [`Animal`](Animal.h) base class provides:
-- Position and movement
-- Energy management
-- Age tracking
-- Life/death state
-
-Derived classes implement specific behaviors:
-- `update()` - turn-based behavior
-- `reproduce()` - species-specific reproduction
+- The `Animal` base class provides the attribute framework, the `AIState` enum, and the movement functions.
+- Derived classes implement the decision-making logic in `updateAI()` and execute actions in `act()`.
 
 ## Termination Conditions
 
 The simulation ends when:
-1. All species go extinct
-2. Maximum turns reached (500 by default)
+1. One of the species is completely wiped out, causing the ecosystem to collapse.
+2. The simulation reaches the maximum turn limit (2000 by default).
 
 ## Example Output
 
 ```
-Population: H=45 C=18 O=12
-........H.......C...................
-....H...............................
-..................H.................O
-........................................
-.....H..............C...............H..
-........................................
-```
-
-## Development
-
-### Adding New Features
-1. Modify animal behaviors in respective class files
-2. Add new parameters to simulation constants
-3. Extend the [`World`](World.h) class for environmental features
-4. Update the main loop for new simulation rules
-
-### Clean Build
-```bash
-make clean
-make
+--- Intelligent Agent Simulation ---
+. . . . . . . . . . H . . . . . . . . . . . . . . . . .
+. . . . . H . . . . . . . . C . . . . . . O . . . . . .
+. . . . . . . . . . . . . . . . . . . . . . . . . . . .
+. . H . . . . . . . . . . . . . . . . . . . . . . . . .
+. . . . . . . O . . . . . . . . . O . . . . H . . . . .
+------------------------------------
+Turn: 124 | Herbivores (H): 32 | Carnivores (C): 4 | Omnivores (O): 11
 ```
 
 ## License
 
-This project is open source and available under the MIT License. See [LICENSE](LICENSE) for details.
+This project is open source and available under the MIT License. See the `LICENSE` file for details.
 
 Copyright (c) 2025 Samarth Shrivastava
