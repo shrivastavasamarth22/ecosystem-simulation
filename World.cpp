@@ -58,7 +58,7 @@ void World::update() {
     for (auto& animal : animals) {
         if (!animal->isDead()) {
             // Apply aging, hunger, regeneration, and passive energy loss
-            animal->postTurnUpdate(*this); // Pass world object
+            animal->postTurnUpdate(); // Pass world object
 
             // Check for reproduction
             auto newborn = animal->reproduce();

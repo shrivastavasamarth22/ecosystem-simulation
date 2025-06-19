@@ -1,7 +1,8 @@
 #include "Animal.h"
-#include "World.h"
+#include "World.h" // Still needed for movement function calls
 #include <random>
 #include <cmath>
+#include <algorithm> // For std::min/max
 
 // Global RNG
 std::mt19937 rng(std::random_device{}());
@@ -17,86 +18,71 @@ Animal::Animal(int start_x, int start_y, char sym,
       current_state(AIState::WANDERING), target(nullptr) {}
 
 void Animal::takeDamage(int amount) {
-    if (!is_alive) return; // Cannot damage a dead animal
+    if (!is_alive) return;
 
     health -= amount;
-    turns_since_damage = 0; // Reset regen timer
+    turns_since_damage = 0;
     if (health <= 0) {
         kill();
     }
 }
 
-// postTurnUpdate now includes Hunger and Regeneration
-void Animal::postTurnUpdate(World& world) { // Added world param, not used yet but good for future
+void Animal::postTurnUpdate() {
     if (!is_alive) return;
 
     age++;
-    energy--; // Base energy cost of living
+    energy--;
 
     // --- HUNGER SYSTEM ---
-    // Reset current stats to base stats before applying hunger effects
     current_damage = base_damage;
     current_speed = base_speed;
     current_sight_radius = base_sight_radius;
 
-    if (max_energy > 0) { // Avoid division by zero if max_energy is not set
+    if (max_energy > 0) {
         float energy_percentage = static_cast<float>(energy) / max_energy;
 
-        if (energy_percentage < 0.3f) { // Desperate state
-            health -= 5; // Starvation damage
+        if (energy_percentage < 0.3f) {
+            health -= 5;
             current_damage += 7;
-            current_speed  = std::max(1, current_speed + 2); // Ensure speed doesn't drop below 1
+            current_speed  = std::max(1, current_speed + 2);
             current_sight_radius += 3;
-        } else if (energy_percentage < 0.5f) { // Hungry state
-            health -= 2; // Starvation damage
+        } else if (energy_percentage < 0.5f) {
+            health -= 2;
             current_damage += 2;
             current_speed = std::max(1, current_speed + 1);
             current_sight_radius += 1;
         }
     }
-    // Check if starvation killed the animal
     if (health <= 0) {
         kill();
-        return; // No regeneration if dead
+        return;
     }
 
     // --- HEALTH REGENERATION ---
     turns_since_damage++;
-    const int REGEN_DELAY_TURNS = 3; // How many turns without damage before regen starts
-    const int REGEN_AMOUNT = 1;      // How much HP to regen per turn
+    const int REGEN_DELAY_TURNS = 3;
+    const int REGEN_AMOUNT = 1;
 
     if (turns_since_damage > REGEN_DELAY_TURNS) {
-        // Determine the cap: 100% if HP was >= 75%, otherwise 75%
-        float regen_cap_percentage = (static_cast<float>(health) / max_health >= 0.75f && turns_since_damage == REGEN_DELAY_TURNS + 1)
-                                      || (max_health - health <= (max_health * 0.25f)) // if only lost <= 25% health initially
-                                      ? 1.0f : 0.75f;
+        // Removed unused 'regen_cap_hp'
+        int actual_regen_cap;
 
-        // More robust cap: if health ever dropped below 75% of max, cap is 75%
-        // This requires tracking if health *ever* dropped that low.
-        // For simplicity, current check: if current health is below 75% of max_health, cap is 75%.
-        // A better approach would be a flag `bool severely_wounded` set in takeDamage.
-        // For now, this approximation will work:
-        bool was_severely_wounded = false; // Placeholder for more complex tracking
-        // A simple way to check if it *was* low before starting to regen:
-        if (health < 0.75 * max_health) {
-             was_severely_wounded = true;
-        }
-
-        int regen_cap_hp;
-        if(was_severely_wounded && health < max_health * 0.75f) { // Still severely wounded or was
-            regen_cap_hp = static_cast<int>(max_health * 0.75f);
+        // If current health is below 75% of max_health, the cap is 75%.
+        // Otherwise (if current health is at or above 75%), the cap is 100% (max_health).
+        // This means if an animal takes minor damage (e.g., to 80% HP), it can heal back to 100%.
+        // If it takes major damage (e.g., to 50% HP), it can only heal back up to 75%.
+        if (static_cast<float>(health) / max_health < 0.75f) {
+             actual_regen_cap = static_cast<int>(max_health * 0.75f);
         } else {
-            regen_cap_hp = max_health;
+            actual_regen_cap = max_health;
         }
 
-
-        if (health < regen_cap_hp) {
+        if (health < actual_regen_cap) {
             health += REGEN_AMOUNT;
-            health = std::min(health, regen_cap_hp); // Clamp to the regeneration cap
+            health = std::min(health, actual_regen_cap); // Clamp to the determined cap
         }
     }
 }
-
 
 bool Animal::isDead() const {
     return !is_alive;
@@ -109,7 +95,7 @@ void Animal::kill() {
 
 // Movement functions (moveTowards, moveAwayFrom, moveRandom) remain unchanged
 void Animal::moveTowards(const World& world, int target_x, int target_y) {
-    for (int i = 0; i < current_speed; ++i) { // Use current_speed
+    for (int i = 0; i < current_speed; ++i) { 
         int dx = target_x - x;
         int dy = target_y - y;
         int move_dx = 0;
@@ -129,7 +115,7 @@ void Animal::moveTowards(const World& world, int target_x, int target_y) {
 }
 
 void Animal::moveAwayFrom(const World& world, int target_x, int target_y) {
-    for (int i = 0; i < current_speed; ++i) { // Use current_speed
+    for (int i = 0; i < current_speed; ++i) { 
         int dx = x - target_x;
         int dy = y - target_y;
         int move_dx = 0;
@@ -150,7 +136,7 @@ void Animal::moveAwayFrom(const World& world, int target_x, int target_y) {
 
 void Animal::moveRandom(const World& world) {
     std::uniform_int_distribution<int> dist(-1, 1);
-    for (int i = 0; i < current_speed; ++i) { // Use current_speed
+    for (int i = 0; i < current_speed; ++i) {
         int new_x = x + dist(rng);
         int new_y = y + dist(rng);
         if (new_x >= 0 && new_x < world.getWidth() && new_y >= 0 && new_y < world.getHeight()) {

@@ -54,7 +54,7 @@ class Animal {
         virtual std::unique_ptr<Animal> reproduce() = 0;
 
         void takeDamage(int amount);
-        void postTurnUpdate(World& world); // Now needs world for boundary checks if hunger causes death
+        void postTurnUpdate(); // Now needs world for boundary checks if hunger causes death
         bool isDead() const;
         void kill();
 
