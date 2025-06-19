@@ -4,9 +4,19 @@
 #include "Animal.h"
 
 class Omnivore : public Animal {
-  public:
+public:
+    // Constructor: Creates an Omnivore at a specific location.
     Omnivore(int x, int y);
-    void update(World& world) override;
+
+    // --- Overridden AI Functions ---
+
+    // Decides its state: WANDERING, CHASING, PACK_HUNTING, or FLEEING.
+    void updateAI(World& world) override;
+
+    // Executes the action for the current state.
+    void act(World& world) override;
+
+    // Creates a new Omnivore if energy is sufficient.
     std::unique_ptr<Animal> reproduce() override;
 };
 

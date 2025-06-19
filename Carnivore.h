@@ -4,14 +4,19 @@
 #include "Animal.h"
 
 class Carnivore : public Animal {
-  public:
-    // Constructor
+public:
+    // Constructor: Creates a Carnivore at a specific location.
     Carnivore(int x, int y);
 
-    // Override the update method
-    void update(World& world) override;
+    // --- Overridden AI Functions ---
 
-    // Override the reproduce method
+    // Decides whether to chase prey or flee from an Omnivore pack.
+    void updateAI(World& world) override;
+
+    // Executes the action: chases, attacks, or flees.
+    void act(World& world) override;
+
+    // Creates a new Carnivore if energy is sufficient.
     std::unique_ptr<Animal> reproduce() override;
 };
 

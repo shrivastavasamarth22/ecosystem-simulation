@@ -2,54 +2,76 @@
 #include "World.h"
 #include "Herbivore.h"
 #include "Omnivore.h"
-#include <vector>
 
-const int CARNIVORE_STARTING_ENERGY = 25;
-const int CARNIVORE_REPRODUCE_ENERGY = 40;
-const int CARNIVORE_MAX_AGE = 70;
-const int CARNIVORE_HUNT_GAIN = 20;
-const int CARNIVORES_NEEDED_TO_HUNT_OMNIVORE = 3;
+// --- Balancing Constants ---
+const int CARNIVORE_HP = 80;
+const int CARNIVORE_DMG = 25;
+const int CARNIVORE_SIGHT = 5;
+const int CARNIVORE_SPEED = 2; // Faster than herbivores
+const int CARNIVORE_ENERGY = 20;
+const int CARNIVORE_REPRODUCE_ENERGY = 35;
+const int OMNIVORE_PACK_THREAT_SIZE = 3;
 
-Carnivore::Carnivore(int x, int y) : Animal(x, y, CARNIVORE_STARTING_ENERGY, 'C') {}
+Carnivore::Carnivore(int x, int y)
+    : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_DMG, CARNIVORE_SIGHT, CARNIVORE_SPEED, CARNIVORE_ENERGY) {}
 
-void Carnivore::update(World& world) {
-  if (!is_alive) return;
-
-  age++;
-  energy-= 3;
-
-  // --- Hunting logic ---
-  // 1. Hunt Herbivores (alone)
-  auto nearby_herbivores = world.getAnimalsNear<Herbivore>(x, y, 1);
-  if (!nearby_herbivores.empty()) {
-    nearby_herbivores[0]->kill();
-    gainEnergy(CARNIVORE_HUNT_GAIN);
-    return; // Stop after a successful hunt
-  }
-
-  // 2. Hunt Omnivores (in a group)
-  auto nearby_omnivores = world.getAnimalsNear<Omnivore>(x, y, 2);
-  for (auto& target_omnivore : nearby_omnivores) {
-    if (target_omnivore->isDead()) continue;
-    auto allies = world.getAnimalsNear<Carnivore>(target_omnivore->getX(), target_omnivore->getY(), 1);
-    if (allies.size() >= CARNIVORES_NEEDED_TO_HUNT_OMNIVORE) {
-      target_omnivore->kill();
-      gainEnergy(CARNIVORE_HUNT_GAIN);
-      break;
+void Carnivore::updateAI(World& world) {
+    // Priority 1: Flee from Omnivore packs
+    auto omnivores = world.getAnimalsNear<Omnivore>(x, y, sight_radius);
+    if (omnivores.size() >= OMNIVORE_PACK_THREAT_SIZE) {
+        current_state = AIState::FLEEING;
+        target = omnivores[0];
+        return;
     }
-  }
-  if (energy <= 0 || age > CARNIVORE_MAX_AGE) {
-    kill();
-  }
+
+    // Priority 2: Hunt Herbivores
+    auto prey = world.getAnimalsNear<Herbivore>(x, y, sight_radius);
+    if (!prey.empty()) {
+        current_state = AIState::CHASING;
+        target = prey[0];
+        return;
+    }
+
+    // If nothing else, wander
+    current_state = AIState::WANDERING;
+    target = nullptr;
+}
+
+void Carnivore::act(World& world) {
+    switch (current_state) {
+        case AIState::CHASING:
+            if (target && !target->isDead()) {
+                // Check if adjacent to attack
+                int dx = std::abs(x - target->getX());
+                int dy = std::abs(y - target->getY());
+                if (dx <= 1 && dy <= 1) {
+                    target->takeDamage(damage);
+                    if (target->isDead()) {
+                        energy += 20; // Energy from kill
+                    }
+                } else {
+                    moveTowards(target->getX(), target->getY());
+                }
+            }
+            break;
+        case AIState::FLEEING:
+            if (target && !target->isDead()) {
+                moveAwayFrom(target->getX(), target->getY());
+            }
+            break;
+        case AIState::WANDERING:
+            moveRandom(world);
+            break;
+        default:
+            moveRandom(world);
+            break;
+    }
 }
 
 std::unique_ptr<Animal> Carnivore::reproduce() {
-  if (energy > CARNIVORE_REPRODUCE_ENERGY) {
-    energy -= (CARNIVORE_REPRODUCE_ENERGY / 2);
-    return std::make_unique<Carnivore>(x, y);
-  }
-  return nullptr;
+    if (energy > CARNIVORE_REPRODUCE_ENERGY) {
+        energy /= 2;
+        return std::make_unique<Carnivore>(x, y);
+    }
+    return nullptr;
 }
-
-
-

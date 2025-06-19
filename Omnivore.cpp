@@ -2,60 +2,87 @@
 #include "World.h"
 #include "Herbivore.h"
 #include "Carnivore.h"
-#include <vector>
 
-// Define constants for behavior
-const int OMNIVORE_STARTING_ENERGY = 20;
-const int OMNIVORE_REPRODUCE_ENERGY = 30;
-const int OMNIVORE_MAX_AGE = 60;
-const int OMNIVORE_GRAZE_GAIN = 1;
-const int OMNIVORE_HUNT_GAIN = 15;
-const int OMNIVORES_NEEDED_TO_HUNT_CARNIVORE = 3;
+// --- Balancing Constants ---
+const int OMNIVORE_HP = 60;
+const int OMNIVORE_DMG = 15;
+const int OMNIVORE_SIGHT = 6;
+const int OMNIVORE_SPEED = 1;
+const int OMNIVORE_ENERGY = 15;
+const int OMNIVORE_REPRODUCE_ENERGY = 25;
+const int OMNIVORE_PACK_HUNT_SIZE = 3;
 
-Omnivore::Omnivore(int x, int y) : Animal(x, y, OMNIVORE_STARTING_ENERGY, 'O') {}
+Omnivore::Omnivore(int x, int y)
+    : Animal(x, y, 'O', OMNIVORE_HP, OMNIVORE_DMG, OMNIVORE_SIGHT, OMNIVORE_SPEED, OMNIVORE_ENERGY) {}
 
-void Omnivore::update(World& world) {
-  if (!is_alive) return;
-
-  age++;
-
-  energy -= 2;
-  energy += OMNIVORE_GRAZE_GAIN; // Gain energy from grazing
-
-  // --- Hunting Logic ---
-
-  // 1. Hunt Herbivores (alone)
-
-  auto nearby_herbivores = world.getAnimalsNear<Herbivore>(x, y, 1);
-  if (!nearby_herbivores.empty()) {
-    nearby_herbivores[0]->kill();
-    gainEnergy(OMNIVORE_HUNT_GAIN);
-    return; // Stop after hunting one herbivore
-  }
-
-  // 2. Hunt Carnivores (in a group)
-  auto nearby_carnivores = world.getAnimalsNear<Carnivore>(x, y, 2);
-  for  (auto& target_carnivore: nearby_carnivores) {
-    if (target_carnivore->isDead()) continue;
-
-    auto allies = world.getAnimalsNear<Omnivore>(target_carnivore->getX(), target_carnivore->getY(), 1);
-    if (allies.size() >= OMNIVORES_NEEDED_TO_HUNT_CARNIVORE) {
-      target_carnivore->kill();
-      gainEnergy(OMNIVORE_HUNT_GAIN);
-      break; // Stop after hunting one carnivore
+void Omnivore::updateAI(World& world) {
+    // Priority 1: Hunt Carnivores in packs
+    auto carnivores = world.getAnimalsNear<Carnivore>(x, y, sight_radius);
+    if (!carnivores.empty()) {
+        auto allies = world.getAnimalsNear<Omnivore>(x, y, sight_radius);
+        if (allies.size() >= OMNIVORE_PACK_HUNT_SIZE) {
+            current_state = AIState::PACK_HUNTING;
+            target = carnivores[0];
+            return;
+        } else {
+            // Not enough allies, flee!
+            current_state = AIState::FLEEING;
+            target = carnivores[0];
+            return;
+        }
     }
-  }
+    
+    // Priority 2: Hunt Herbivores
+    auto herbivores = world.getAnimalsNear<Herbivore>(x, y, sight_radius);
+    if (!herbivores.empty()) {
+        current_state = AIState::CHASING;
+        target = herbivores[0];
+        return;
+    }
 
-  if (energy <= 0 || age >= OMNIVORE_MAX_AGE) {
-    kill(); // Omnivore dies if energy is zero or max age reached
-  }
+    // If nothing else, wander and graze
+    current_state = AIState::WANDERING;
+    target = nullptr;
+    energy++;
+}
 
+void Omnivore::act(World& world) {
+     if (target && target->isDead()) {
+        target = nullptr;
+        current_state = AIState::WANDERING;
+    }
+
+    switch (current_state) {
+        case AIState::PACK_HUNTING: // Same logic as chasing
+        case AIState::CHASING:
+            if (target) {
+                int dx = std::abs(x - target->getX());
+                int dy = std::abs(y - target->getY());
+                if (dx <= 1 && dy <= 1) {
+                    target->takeDamage(damage);
+                    if (target->isDead()) {
+                        energy += 15;
+                    }
+                } else {
+                    moveTowards(target->getX(), target->getY());
+                }
+            }
+            break;
+        case AIState::FLEEING:
+            if (target) {
+                moveAwayFrom(target->getX(), target->getY());
+            }
+            break;
+        case AIState::WANDERING:
+            moveRandom(world);
+            break;
+    }
 }
 
 std::unique_ptr<Animal> Omnivore::reproduce() {
-  if (energy > OMNIVORE_REPRODUCE_ENERGY) {
-    energy -= (OMNIVORE_REPRODUCE_ENERGY / 2); // Reduce energy for reproduction
-    return std::make_unique<Omnivore>(x, y); // Create a new
-  }
-  return nullptr; // Not enough energy to reproduce
+    if (energy > OMNIVORE_REPRODUCE_ENERGY) {
+        energy /= 2;
+        return std::make_unique<Omnivore>(x, y);
+    }
+    return nullptr;
 }
