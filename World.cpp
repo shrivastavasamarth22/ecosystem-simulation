@@ -30,30 +30,48 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
 }
 
 void World::update() {
-  turn_count++;
+    turn_count++;
 
-  std::shuffle(animals.begin(), animals.end(), rng);
+    // Shuffle for fairness
+    std::shuffle(animals.begin(), animals.end(), rng);
 
-  std::vector<std::unique_ptr<Animal>> new_animals;
-  for (auto& animal : animals) {
-    if (!animal->isDead()) {
-      animal->move(*this);
-      animal->update(*this);
+    // --- NEW THREE-PHASE UPDATE LOOP ---
 
-      auto newborn = animal->reproduce();
-      if (newborn) {
-        new_animals.push_back(std::move(newborn));
-      }
+    // 1. AI Update Phase: All animals perceive the world and decide on their next action.
+    for (auto& animal : animals) {
+        if (!animal->isDead()) {
+            animal->updateAI(*this);
+        }
     }
-  }
 
-  for (auto& newborn : new_animals) {
-    animals.push_back(std::move(newborn));
-  }
+    // 2. Action Phase: All animals execute their chosen action (move, attack, etc.).
+    for (auto& animal : animals) {
+        if (!animal->isDead()) {
+            animal->act(*this);
+        }
+    }
 
-  cleanup();
+    // 3. Post-Turn & Reproduction Phase
+    std::vector<std::unique_ptr<Animal>> new_animals;
+    for (auto& animal : animals) {
+        if (!animal->isDead()) {
+            animal->postTurnUpdate(); // Aging, energy loss
+            auto newborn = animal->reproduce();
+            if (newborn) {
+                new_animals.push_back(std::move(newborn));
+            }
+        }
+    }
 
+    // Add newborns to the world
+    for (auto& newborn : new_animals) {
+        animals.push_back(std::move(newborn));
+    }
+    
+    // Remove dead animals from the world
+    cleanup();
 }
+
 
 void World::cleanup() {
   animals.erase(
