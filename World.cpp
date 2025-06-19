@@ -79,7 +79,7 @@ void World::draw() const {
 
       if (animal->getSymbol() == 'H') {
         herbivore_count++;
-      } else if (animal->getSymbol() == 'W') {
+      } else if (animal->getSymbol() == 'C') {
         carnivore_count++;
       } else if (animal->getSymbol() == 'O') {
         omnivore_count++;
@@ -105,7 +105,7 @@ void World::draw() const {
   std::cout << "--------------------------------" << std::endl;
   std::cout << "Turn: " << turn_count
     << " | Herbivores (H): " << herbivore_count
-    << " | Carnivores (W): " << carnivore_count
+    << " | Carnivores (C): " << carnivore_count
     << " | Omnivores (O): " << omnivore_count << std::endl;
 }
 

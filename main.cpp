@@ -4,11 +4,11 @@
 #include <chrono>
 
 int main() {
-  const int WORLD_WIDTH = 40;
-  const int WORLD_HEIGHT = 20;
-  const int INITIAL_HERBIVORES = 25;
-  const int INITIAL_CARNIVORES = 5;
-  const int INITIAL_OMNIVORES = 10; // Add omnivores
+  const int WORLD_WIDTH = 50;
+  const int WORLD_HEIGHT = 30;
+  const int INITIAL_HERBIVORES = 80;
+  const int INITIAL_CARNIVORES = 30;
+  const int INITIAL_OMNIVORES = 20; // Add omnivores
   const int SIMULATION_SPEED_MS = 500;
 
   World world(WORLD_WIDTH, WORLD_HEIGHT);
