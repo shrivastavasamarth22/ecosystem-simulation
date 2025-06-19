@@ -47,7 +47,6 @@ void Omnivore::updateAI(World& world) {
 }
 
 void Omnivore::act(World& world) {
-    // THIS IS THE CRITICAL FIX: Check if target is dead or became null
     if (target && target->isDead()) {
         target = nullptr;
         current_state = AIState::WANDERING;
@@ -56,7 +55,7 @@ void Omnivore::act(World& world) {
     switch (current_state) {
         case AIState::PACK_HUNTING:
         case AIState::CHASING:
-            if (target) { // Check if target exists before using it
+            if (target) {
                 int dx = std::abs(x - target->getX());
                 int dy = std::abs(y - target->getY());
                 if (dx <= 1 && dy <= 1) {
@@ -65,13 +64,15 @@ void Omnivore::act(World& world) {
                         energy += 15;
                     }
                 } else {
-                    moveTowards(target->getX(), target->getY());
+                    // Pass the world object to the movement function
+                    moveTowards(world, target->getX(), target->getY());
                 }
             }
             break;
         case AIState::FLEEING:
-            if (target) { // Check if target exists before using it
-                moveAwayFrom(target->getX(), target->getY());
+            if (target) {
+                // Pass the world object to the movement function
+                moveAwayFrom(world, target->getX(), target->getY());
             }
             break;
         case AIState::WANDERING:

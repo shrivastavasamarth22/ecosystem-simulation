@@ -3,12 +3,13 @@
 #include <random>
 #include <cmath>
 
-// Global rng
+// Global RNG
 std::mt19937 rng(std::random_device{}());
 
 Animal::Animal(int start_x, int start_y, char sym, int max_hp, int dmg, int sight, int spd, int nrg)
-    : x(start_x), y(start_y), age(0), is_alive(true), symbol(sym), health(max_hp), max_health(max_hp),
-      damage(dmg), sight_radius(sight), speed(spd), energy(nrg), current_state(AIState::WANDERING), target(nullptr) {}
+    : x(start_x), y(start_y), age(0), is_alive(true), symbol(sym),
+      health(max_hp), max_health(max_hp), damage(dmg), sight_radius(sight),
+      speed(spd), energy(nrg), current_state(AIState::WANDERING), target(nullptr) {}
 
 void Animal::takeDamage(int amount) {
     health -= amount;
@@ -20,7 +21,7 @@ void Animal::takeDamage(int amount) {
 void Animal::postTurnUpdate() {
     if (!is_alive) return;
     age++;
-    energy--; // Energy cost of living
+    energy--;
 }
 
 bool Animal::isDead() const {
@@ -32,33 +33,64 @@ void Animal::kill() {
     is_alive = false;
 }
 
-void Animal::moveTowards(int target_x, int target_y) {
+// --- CORRECTED MOVEMENT FUNCTIONS ---
+
+void Animal::moveTowards(const World& world, int target_x, int target_y) {
     for (int i = 0; i < speed; ++i) {
         int dx = target_x - x;
         int dy = target_y - y;
 
-        // Move on the axis with the greater distance
+        int move_dx = 0;
+        int move_dy = 0;
+
+        // Determine direction of movement
         if (std::abs(dx) > std::abs(dy)) {
-            x += (dx > 0) ? 1 : -1;
+            move_dx = (dx > 0) ? 1 : -1;
         } else if (dy != 0) {
-            y += (dy > 0) ? 1 : -1;
-        } else if (dx != 0) { // Handle moving on a straight line
-            x += (dx > 0) ? 1 : -1;
+            move_dy = (dy > 0) ? 1 : -1;
+        } else if (dx != 0) {
+            move_dx = (dx > 0) ? 1 : -1;
+        }
+
+        int new_x = x + move_dx;
+        int new_y = y + move_dy;
+
+        // Check world boundaries before updating position
+        if (new_x >= 0 && new_x < world.getWidth()) {
+            x = new_x;
+        }
+        if (new_y >= 0 && new_y < world.getHeight()) {
+            y = new_y;
         }
     }
 }
 
-void Animal::moveAwayFrom(int target_x, int target_y) {
+void Animal::moveAwayFrom(const World& world, int target_x, int target_y) {
     for (int i = 0; i < speed; ++i) {
         int dx = x - target_x;
         int dy = y - target_y;
 
+        int move_dx = 0;
+        int move_dy = 0;
+
+        // Determine direction of movement
         if (std::abs(dx) > std::abs(dy)) {
-            x += (dx > 0) ? 1 : -1;
+            move_dx = (dx > 0) ? 1 : -1;
         } else if (dy != 0) {
-            y += (dy > 0) ? 1 : -1;
-        } else if (dx != 0){
-            x += (dx > 0) ? 1 : -1;
+            move_dy = (dy > 0) ? 1 : -1;
+        } else if (dx != 0) {
+            move_dx = (dx > 0) ? 1 : -1;
+        }
+
+        int new_x = x + move_dx;
+        int new_y = y + move_dy;
+
+        // Check world boundaries before updating position
+        if (new_x >= 0 && new_x < world.getWidth()) {
+            x = new_x;
+        }
+        if (new_y >= 0 && new_y < world.getHeight()) {
+            y = new_y;
         }
     }
 }

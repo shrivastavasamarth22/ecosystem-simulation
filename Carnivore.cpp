@@ -40,7 +40,6 @@ void Carnivore::updateAI(World& world) {
 }
 
 void Carnivore::act(World& world) {
-    // Double-check target validity before acting
     if (target && target->isDead()) {
         target = nullptr;
         current_state = AIState::WANDERING;
@@ -54,16 +53,18 @@ void Carnivore::act(World& world) {
                 if (dx <= 1 && dy <= 1) {
                     target->takeDamage(damage);
                     if (target->isDead()) {
-                        energy += 20; // Energy from kill
+                        energy += 20;
                     }
                 } else {
-                    moveTowards(target->getX(), target->getY());
+                    // Pass the world object to the movement function
+                    moveTowards(world, target->getX(), target->getY());
                 }
             }
             break;
         case AIState::FLEEING:
             if (target) {
-                moveAwayFrom(target->getX(), target->getY());
+                // Pass the world object to the movement function
+                moveAwayFrom(world, target->getX(), target->getY());
             }
             break;
         case AIState::WANDERING:

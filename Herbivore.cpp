@@ -34,7 +34,6 @@ void Herbivore::updateAI(World& world) {
 }
 
 void Herbivore::act(World& world) {
-    // Double-check target validity before acting
     if (target && target->isDead()) {
         target = nullptr;
         current_state = AIState::WANDERING;
@@ -43,14 +42,14 @@ void Herbivore::act(World& world) {
     switch (current_state) {
         case AIState::FLEEING:
             if (target) {
-                moveAwayFrom(target->getX(), target->getY());
+                // Pass the world object to the movement function
+                moveAwayFrom(world, target->getX(), target->getY());
             }
             break;
         case AIState::WANDERING:
             moveRandom(world);
             break;
         default:
-            // Other states don't apply to herbivores
             moveRandom(world);
             break;
     }
