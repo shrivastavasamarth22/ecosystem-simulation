@@ -7,17 +7,17 @@ int main() {
     // --- Simulation Parameters ---
     // You can tweak these values to see how the ecosystem changes.
     const int WORLD_WIDTH = 50;
-    const int WORLD_HEIGHT = 25;
+    const int WORLD_HEIGHT = 40;
 
     // A higher number of herbivores provides a stable food source.
-    const int INITIAL_HERBIVORES = 40;
+    const int INITIAL_HERBIVORES = 80;
     // Omnivores are versatile but need numbers to be effective hunters.
     const int INITIAL_OMNIVORES = 15;
     // Carnivores are powerful but few in number, as they require a lot of food.
     const int INITIAL_CARNIVORES = 5;
 
     // Controls the speed of the simulation (milliseconds per turn).
-    const int SIMULATION_SPEED_MS = 150;
+    const int SIMULATION_SPEED_MS = 500;
     const int MAX_TURNS = 2000; // A higher turn limit for the more complex simulation.
 
 
