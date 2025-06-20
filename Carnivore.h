@@ -18,6 +18,8 @@ public:
     // Decides whether to chase prey or flee from an Omnivore pack.
     void updateAI(World& world) override;
 
+    int getNutritionalValue() const override;
+
     // Executes the action: chases, attacks, or flees.
     void act(World& world) override;
 

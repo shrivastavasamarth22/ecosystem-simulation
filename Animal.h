@@ -55,6 +55,7 @@ class Animal {
         virtual void updateAI(World& world) = 0;
         virtual void act(World& world) = 0;
         virtual std::unique_ptr<Animal> reproduce() = 0;
+        virtual int getNutritionalValue() const;
 
         void takeDamage(int amount);
         void postTurnUpdate(); // Now needs world for boundary checks if hunger causes death

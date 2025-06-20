@@ -27,6 +27,18 @@ void Animal::takeDamage(int amount) {
     }
 }
 
+int Animal::getNutritionalValue() const {
+    // Generic base implementation. Assumes a default value and a penalty.
+    // It's expected that derived classes will provide a more specific override.
+    const int BASE_NUTRITIONAL_VALUE = 20;
+    const int PRIME_AGE = 15;
+    const int PENALTY_PER_YEAR = 1;
+    const int MINIMUM_VALUE = 5;
+
+    int age_penalty = (age > PRIME_AGE) ? (age - PRIME_AGE) * PENALTY_PER_YEAR : 0;
+    return std::max(MINIMUM_VALUE, BASE_NUTRITIONAL_VALUE - age_penalty);
+}
+
 // --- NEW Base Aging Penalties ---
 // This is a generic aging effect. Derived classes will refine this.
 void Animal::applyAgingPenalties() {

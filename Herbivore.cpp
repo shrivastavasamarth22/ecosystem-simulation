@@ -56,6 +56,16 @@ void Herbivore::updateAI(World& world) {
 }
 
 
+int Herbivore::getNutritionalValue() const {
+    const int BASE_NUTRITIONAL_VALUE = 45; // High quality meal
+    const int PRIME_AGE = 8;               // Prime age for a herbivore
+    const int PENALTY_PER_YEAR = 2;        // Value drops off a bit faster
+    const int MINIMUM_VALUE = 10;          // Even an old one is a decent snack
+
+    int age_penalty = (age > PRIME_AGE) ? (age - PRIME_AGE) * PENALTY_PER_YEAR : 0;
+    return std::max(MINIMUM_VALUE, BASE_NUTRITIONAL_VALUE - age_penalty);
+}
+
 void Herbivore::act(World& world) {
     // Check if target died or disappeared
     if (target && target->isDead()) {

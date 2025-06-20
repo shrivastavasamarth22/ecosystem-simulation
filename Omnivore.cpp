@@ -12,8 +12,6 @@ const int OMNIVORE_MAX_ENERGY = 80; // New
 const int OMNIVORE_STARTING_ENERGY = 50;
 const int OMNIVORE_REPRODUCE_ENERGY_COST = 25;
 const int OMNIVORE_PACK_HUNT_SIZE = 3;
-const int ENERGY_FROM_HERB_KILL = 20;
-const int ENERGY_FROM_CARN_KILL = 50;
 
 // New/Adjusted constants for reproduction
 const float OMNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.65f; // << NEW: Need 65% of max energy
@@ -75,19 +73,17 @@ void Omnivore::act(World& world) {
     }
 
     switch (current_state) {
-        case AIState::PACK_HUNTING: // Omnivores hunt carnivores
-        case AIState::CHASING:      // Omnivores hunt herbivores
+        case AIState::PACK_HUNTING:
+        case AIState::CHASING:
             if (target) {
                 int dx = std::abs(x - target->getX());
                 int dy = std::abs(y - target->getY());
                 if (dx <= 1 && dy <= 1) {
-                    target->takeDamage(getCurrentDamage()); // Use current damage
+                    target->takeDamage(getCurrentDamage());
                     if (target->isDead()) {
-                        if (dynamic_cast<Carnivore*>(target)) {
-                            energy = std::min(max_energy, energy + ENERGY_FROM_CARN_KILL);
-                        } else if (dynamic_cast<Herbivore*>(target)) {
-                            energy = std::min(max_energy, energy + ENERGY_FROM_HERB_KILL);
-                        }
+                        // --- UPDATED LOGIC ---
+                        int energy_gained = target->getNutritionalValue();
+                        energy = std::min(max_energy, energy + energy_gained);
                     }
                 } else {
                     moveTowards(world, target->getX(), target->getY());
@@ -103,6 +99,16 @@ void Omnivore::act(World& world) {
             moveRandom(world);
             break;
     }
+}
+
+int Omnivore::getNutritionalValue() const {
+    const int BASE_NUTRITIONAL_VALUE = 35;
+    const int PRIME_AGE = 15;
+    const int PENALTY_PER_YEAR = 1;
+    const int MINIMUM_VALUE = 10;
+
+    int age_penalty = (age > PRIME_AGE) ? (age - PRIME_AGE) * PENALTY_PER_YEAR : 0;
+    return std::max(MINIMUM_VALUE, BASE_NUTRITIONAL_VALUE - age_penalty);
 }
 
 std::unique_ptr<Animal> Omnivore::reproduce() {

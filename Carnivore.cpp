@@ -11,7 +11,6 @@ const int CARNIVORE_BASE_SPEED = 2;
 const int CARNIVORE_MAX_ENERGY = 100; // New
 const int CARNIVORE_STARTING_ENERGY = 70;
 const int CARNIVORE_REPRODUCE_ENERGY_COST = 35;
-const int ENERGY_FROM_KILL = 40;
 
 // New/Adjusted constants for reproduction
 const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.80f; // << NEW: Need 70% of max energy
@@ -19,9 +18,6 @@ const int CARNIVORE_MIN_REPRODUCE_AGE = 10;                // Age requirement
 
 
 const int OMNIVORE_PACK_THREAT_SIZE = 3;
-// Energy gains from kills
-const int ENERGY_FROM_HERBIVORE_KILL = 40;
-const int ENERGY_FROM_OMNIVORE_KILL = 30; // Omnivores are tougher, maybe less net energy or same
 
 Carnivore::Carnivore(int x, int y)
     : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_BASE_DMG, CARNIVORE_BASE_SIGHT, CARNIVORE_BASE_SPEED,
@@ -95,12 +91,10 @@ void Carnivore::act(World& world) {
                 if (dx <= 1 && dy <= 1) { // If adjacent, attack
                     target->takeDamage(getCurrentDamage());
                     if (target->isDead()) {
-                        // Give energy based on what was killed
-                        if (dynamic_cast<Herbivore*>(target)) {
-                            energy = std::min(max_energy, energy + ENERGY_FROM_HERBIVORE_KILL);
-                        } else if (dynamic_cast<Omnivore*>(target)) {
-                            energy = std::min(max_energy, energy + ENERGY_FROM_OMNIVORE_KILL);
-                        }
+                        // --- UPDATED LOGIC ---
+                        // Get nutritional value directly from the killed target
+                        int energy_gained = target->getNutritionalValue();
+                        energy = std::min(max_energy, energy + energy_gained);
                     }
                 } else { // Not adjacent, move towards target
                     moveTowards(world, target->getX(), target->getY());
@@ -119,6 +113,17 @@ void Carnivore::act(World& world) {
             moveRandom(world);
             break;
     }
+}
+
+
+int Carnivore::getNutritionalValue() const {
+    const int BASE_NUTRITIONAL_VALUE = 50; // Very rewarding kill
+    const int PRIME_AGE = 25;              // Prime age is much older
+    const int PENALTY_PER_YEAR = 1;        // Value degrades slowly
+    const int MINIMUM_VALUE = 15;
+
+    int age_penalty = (age > PRIME_AGE) ? (age - PRIME_AGE) * PENALTY_PER_YEAR : 0;
+    return std::max(MINIMUM_VALUE, BASE_NUTRITIONAL_VALUE - age_penalty);
 }
 
 std::unique_ptr<Animal> Carnivore::reproduce() {

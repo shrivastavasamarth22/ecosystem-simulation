@@ -16,6 +16,8 @@ public:
     // Decides its state: WANDERING, CHASING, PACK_HUNTING, or FLEEING.
     void updateAI(World& world) override;
 
+    int getNutritionalValue() const override;
+
     // Executes the action for the current state.
     void act(World& world) override;
 

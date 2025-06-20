@@ -18,6 +18,8 @@ public:
     // Decides what state to be in (FLEEING, WANDERING) based on surroundings.
     void updateAI(World& world) override;
 
+    int getNutritionalValue() const override;
+
     // Executes the action for the current state (e.g., moves away from a threat).
     void act(World& world) override;
 
