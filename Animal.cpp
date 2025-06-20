@@ -43,20 +43,13 @@ int Animal::getNutritionalValue() const {
 // --- NEW Base Aging Penalties ---
 // This is a generic aging effect. Derived classes will refine this.
 void Animal::applyAgingPenalties() {
-    // Example: At certain age thresholds, apply penalties
-    // These are base penalties; derived classes will define their own specific thresholds and magnitudes
-    // For simplicity, we'll focus on reducing base stats, which then affect current stats.
-    // Making max_health decrease is also an option but more complex to balance with regeneration.
-
-    // Let's define some generic age stages for the base class,
-    // but the real impact will come from derived class overrides.
-    // For now, the base class won't apply penalties directly,
-    // forcing derived classes to implement their specific aging.
-    // Alternatively, we can have very mild base penalties.
-
-    // For now, let's make this base function do nothing,
-    // and all aging logic will be in the derived classes' overrides.
-    // This is often cleaner than having base penalties that might not fit all species.
+    // TODO: Apply aging penalties here
+    // Age thresholds should reduce base stats - each species will override this
+    // Consider: health penalties, stat reductions, maybe max_health changes?
+    // 
+    // Base implementation: no penalties (let derived classes handle specifics)
+    // This way each animal type can have their own aging curve
+    // without weird generic penalties that don't fit
 }
 
 void Animal::postTurnUpdate() {
