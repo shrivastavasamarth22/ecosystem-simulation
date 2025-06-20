@@ -4,7 +4,7 @@
 #include "Carnivore.h"
 
 // --- Balancing Constants ---
-const int OMNIVORE_HP = 60;
+const int OMNIVORE_BASE_HP = 60;
 const int OMNIVORE_BASE_DMG = 15;
 const int OMNIVORE_BASE_SIGHT = 6;
 const int OMNIVORE_BASE_SPEED = 1;
@@ -19,7 +19,7 @@ const int OMNIVORE_MIN_REPRODUCE_AGE = 8;                 // Age requirement
 
 
 Omnivore::Omnivore(int x, int y)
-    : Animal(x, y, 'O', OMNIVORE_HP, OMNIVORE_BASE_DMG, OMNIVORE_BASE_SIGHT, OMNIVORE_BASE_SPEED,
+    : Animal(x, y, 'O', OMNIVORE_BASE_HP, OMNIVORE_BASE_DMG, OMNIVORE_BASE_SIGHT, OMNIVORE_BASE_SPEED,
              OMNIVORE_MAX_ENERGY, OMNIVORE_STARTING_ENERGY) {}
 
 
@@ -81,7 +81,6 @@ void Omnivore::act(World& world) {
                 if (dx <= 1 && dy <= 1) {
                     target->takeDamage(getCurrentDamage());
                     if (target->isDead()) {
-                        // --- UPDATED LOGIC ---
                         int energy_gained = target->getNutritionalValue();
                         energy = std::min(max_energy, energy + energy_gained);
                     }
@@ -96,6 +95,15 @@ void Omnivore::act(World& world) {
             }
             break;
         case AIState::WANDERING:
+            moveRandom(world);
+            break;
+        // --- FIX ---
+        // Add a default case to handle any unlisted states (like HERDING)
+        // and prevent the compiler warning.
+        case AIState::HERDING: // Explicitly handle HERDING, even if unreachable
+        default:
+            // If an Omnivore somehow ends up in an unhandled state,
+            // its safest default action is to wander.
             moveRandom(world);
             break;
     }

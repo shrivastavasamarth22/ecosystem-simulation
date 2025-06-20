@@ -4,7 +4,7 @@
 #include "Omnivore.h"
 
 // --- Balancing Constants ---
-const int CARNIVORE_HP = 80;
+const int CARNIVORE_BASE_HP = 80;
 const int CARNIVORE_BASE_DMG = 25;
 const int CARNIVORE_BASE_SIGHT = 5;
 const int CARNIVORE_BASE_SPEED = 2;
@@ -13,14 +13,14 @@ const int CARNIVORE_STARTING_ENERGY = 70;
 const int CARNIVORE_REPRODUCE_ENERGY_COST = 35;
 
 // New/Adjusted constants for reproduction
-const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.80f; // << NEW: Need 70% of max energy
+const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.75f; // << NEW: Need 75% of max energy
 const int CARNIVORE_MIN_REPRODUCE_AGE = 10;                // Age requirement
 
 
 const int OMNIVORE_PACK_THREAT_SIZE = 3;
 
 Carnivore::Carnivore(int x, int y)
-    : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_BASE_DMG, CARNIVORE_BASE_SIGHT, CARNIVORE_BASE_SPEED,
+    : Animal(x, y, 'C', CARNIVORE_BASE_HP, CARNIVORE_BASE_DMG, CARNIVORE_BASE_SIGHT, CARNIVORE_BASE_SPEED,
              CARNIVORE_MAX_ENERGY, CARNIVORE_STARTING_ENERGY) {}
 
 
@@ -91,8 +91,6 @@ void Carnivore::act(World& world) {
                 if (dx <= 1 && dy <= 1) { // If adjacent, attack
                     target->takeDamage(getCurrentDamage());
                     if (target->isDead()) {
-                        // --- UPDATED LOGIC ---
-                        // Get nutritional value directly from the killed target
                         int energy_gained = target->getNutritionalValue();
                         energy = std::min(max_energy, energy + energy_gained);
                     }
@@ -109,7 +107,12 @@ void Carnivore::act(World& world) {
         case AIState::WANDERING:
             moveRandom(world);
             break;
+        // --- FIX ---
+        case AIState::HERDING: // Explicitly handle HERDING
+        case AIState::PACK_HUNTING: // PACK_HUNTING is an omnivore state, not carnivore
         default:
+            // Safest default action for a Carnivore in an unexpected state
+            // is to wander and re-evaluate next turn.
             moveRandom(world);
             break;
     }

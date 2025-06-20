@@ -10,7 +10,8 @@ enum class AIState {
     WANDERING,
     FLEEING,
     CHASING,
-    PACK_HUNTING
+    PACK_HUNTING,
+    HERDING
 };
 
 class Animal {
@@ -22,7 +23,8 @@ class Animal {
 
         // --- Health System ---
         int health;
-        int max_health;
+        int base_max_health;  // <-- New: The natural max HP of the animal
+        int max_health;       // The current max HP, can be buffed by herding
         int turns_since_damage; // For health regeneration
 
         // --- Hunger/Stat System ---
@@ -47,24 +49,26 @@ class Animal {
 
     public:
         // Constructor updated for max_energy and base stats
+        // Constructor updated for base_max_health
         Animal(int start_x, int start_y, char sym,
-           int m_hp, int base_dmg, int base_sight, int base_spd, int m_energy, int start_nrg);
+           int base_m_hp, int base_dmg, int base_sight, int base_spd, int m_energy, int start_nrg);
 
         virtual ~Animal() = default;
 
         virtual void updateAI(World& world) = 0;
         virtual void act(World& world) = 0;
-        virtual std::unique_ptr<Animal> reproduce() = 0;
         virtual int getNutritionalValue() const;
-
+        
         void takeDamage(int amount);
         void postTurnUpdate(); // Now needs world for boundary checks if hunger causes death
         bool isDead() const;
         void kill();
-
+        
         void moveTowards(const World& world, int target_x, int target_y);
         void moveAwayFrom(const World& world, int target_x, int target_y);
         void moveRandom(const World& world);
+        
+        virtual std::unique_ptr<Animal> reproduce() = 0;
 
         // Getters now return CURRENT stats
         int getX() const { return x; }

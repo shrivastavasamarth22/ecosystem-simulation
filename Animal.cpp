@@ -9,9 +9,10 @@ std::mt19937 rng(std::random_device{}());
 
 // Constructor updated
 Animal::Animal(int start_x, int start_y, char sym,
-               int m_hp, int b_dmg, int b_sight, int b_spd, int m_energy, int start_nrg)
+               int base_m_hp, int b_dmg, int b_sight, int b_spd, int m_energy, int start_nrg)
     : x(start_x), y(start_y), age(0), is_alive(true), symbol(sym),
-      health(m_hp), max_health(m_hp), turns_since_damage(0),
+      health(base_m_hp), base_max_health(base_m_hp), max_health(base_m_hp), // <-- Initialize all to base_m_hp
+      turns_since_damage(0),
       base_damage(b_dmg), base_sight_radius(b_sight), base_speed(b_spd),
       current_damage(b_dmg), current_sight_radius(b_sight), current_speed(b_spd),
       energy(start_nrg), max_energy(m_energy),
