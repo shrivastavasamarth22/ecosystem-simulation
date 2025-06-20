@@ -15,6 +15,10 @@ const int OMNIVORE_PACK_HUNT_SIZE = 3;
 const int ENERGY_FROM_HERB_KILL = 20;
 const int ENERGY_FROM_CARN_KILL = 50;
 
+// New/Adjusted constants for reproduction
+const float OMNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.65f; // << NEW: Need 65% of max energy
+const int OMNIVORE_MIN_REPRODUCE_AGE = 8;                 // Age requirement
+
 
 Omnivore::Omnivore(int x, int y)
     : Animal(x, y, 'O', OMNIVORE_HP, OMNIVORE_BASE_DMG, OMNIVORE_BASE_SIGHT, OMNIVORE_BASE_SPEED,
@@ -85,7 +89,9 @@ void Omnivore::act(World& world) {
 }
 
 std::unique_ptr<Animal> Omnivore::reproduce() {
-    if (energy > OMNIVORE_MAX_ENERGY * 0.75 && age > 8) {
+    // Use the new percentage constant for the energy threshold
+    if (energy > static_cast<int>(max_energy * OMNIVORE_REPRODUCE_ENERGY_PERCENTAGE) &&
+        age > OMNIVORE_MIN_REPRODUCE_AGE) {
         energy -= OMNIVORE_REPRODUCE_ENERGY_COST;
         return std::make_unique<Omnivore>(x, y);
     }

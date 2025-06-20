@@ -14,27 +14,52 @@ const int CARNIVORE_REPRODUCE_ENERGY_COST = 35;
 const int OMNIVORE_PACK_THREAT_SIZE = 3;
 const int ENERGY_FROM_KILL = 40;
 
+// New/Adjusted constants for reproduction
+const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.70f; // << NEW: Need 70% of max energy
+const int CARNIVORE_MIN_REPRODUCE_AGE = 10;                // Age requirement
+
+const int OMNIVORE_PACK_THREAT_SIZE = 3; // If 3 or more omnivores, carnivore flees
+// Energy gains from kills
+const int ENERGY_FROM_HERBIVORE_KILL = 40;
+const int ENERGY_FROM_OMNIVORE_KILL = 30; // Omnivores are tougher, maybe less net energy or same
+
 Carnivore::Carnivore(int x, int y)
     : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_BASE_DMG, CARNIVORE_BASE_SIGHT, CARNIVORE_BASE_SPEED,
              CARNIVORE_MAX_ENERGY, CARNIVORE_STARTING_ENERGY) {}
 
 void Carnivore::updateAI(World& world) {
-    target = nullptr;
+    target = nullptr; // Reset target each turn
 
-    auto omnivores = world.getAnimalsNear<Omnivore>(x, y, getCurrentSightRadius()); // Use current sight
-    if (omnivores.size() >= OMNIVORE_PACK_THREAT_SIZE) {
+    // --- Perception Phase ---
+    auto nearby_omnivores = world.getAnimalsNear<Omnivore>(x, y, getCurrentSightRadius());
+    auto nearby_herbivores = world.getAnimalsNear<Herbivore>(x, y, getCurrentSightRadius());
+
+    // --- Decision Phase ---
+
+    // Priority 1: Flee from Omnivore packs
+    if (nearby_omnivores.size() >= OMNIVORE_PACK_THREAT_SIZE) {
         current_state = AIState::FLEEING;
-        target = omnivores[0];
+        target = nearby_omnivores[0]; // Flee from the first one in the pack detected
         return;
     }
 
-    auto prey = world.getAnimalsNear<Herbivore>(x, y, getCurrentSightRadius()); // Use current sight
-    if (!prey.empty()) {
+    // Priority 2: Hunt Herbivores
+    if (!nearby_herbivores.empty()) {
         current_state = AIState::CHASING;
-        target = prey[0];
+        target = nearby_herbivores[0]; // Target the first herbivore seen
         return;
     }
 
+    // Priority 3: Hunt lone or small groups of Omnivores
+    // This condition means there's no large omnivore pack threat, and no herbivores were found.
+    // We check if there are *any* omnivores nearby that are NOT a pack threat.
+    if (!nearby_omnivores.empty() && nearby_omnivores.size() < OMNIVORE_PACK_THREAT_SIZE) {
+        current_state = AIState::CHASING; // Same state as chasing herbivores
+        target = nearby_omnivores[0];   // Target the first lone/small group omnivore
+        return;
+    }
+
+    // Priority 4: If no threats and no prey, wander
     current_state = AIState::WANDERING;
 }
 
@@ -49,12 +74,17 @@ void Carnivore::act(World& world) {
             if (target) {
                 int dx = std::abs(x - target->getX());
                 int dy = std::abs(y - target->getY());
-                if (dx <= 1 && dy <= 1) {
-                    target->takeDamage(getCurrentDamage()); // Use current damage
+                if (dx <= 1 && dy <= 1) { // If adjacent, attack
+                    target->takeDamage(getCurrentDamage());
                     if (target->isDead()) {
-                        energy = std::min(max_energy, energy + ENERGY_FROM_KILL); // Gain energy, cap at max
+                        // Give energy based on what was killed
+                        if (dynamic_cast<Herbivore*>(target)) {
+                            energy = std::min(max_energy, energy + ENERGY_FROM_HERBIVORE_KILL);
+                        } else if (dynamic_cast<Omnivore*>(target)) {
+                            energy = std::min(max_energy, energy + ENERGY_FROM_OMNIVORE_KILL);
+                        }
                     }
-                } else {
+                } else { // Not adjacent, move towards target
                     moveTowards(world, target->getX(), target->getY());
                 }
             }
@@ -74,7 +104,9 @@ void Carnivore::act(World& world) {
 }
 
 std::unique_ptr<Animal> Carnivore::reproduce() {
-    if (energy > CARNIVORE_MAX_ENERGY * 0.75 && age > 10) {
+    // Use the new percentage constant for the energy threshold
+    if (energy > static_cast<int>(max_energy * CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE) &&
+        age > CARNIVORE_MIN_REPRODUCE_AGE) {
         energy -= CARNIVORE_REPRODUCE_ENERGY_COST;
         return std::make_unique<Carnivore>(x, y);
     }
