@@ -11,14 +11,14 @@ const int CARNIVORE_BASE_SPEED = 2;
 const int CARNIVORE_MAX_ENERGY = 100; // New
 const int CARNIVORE_STARTING_ENERGY = 70;
 const int CARNIVORE_REPRODUCE_ENERGY_COST = 35;
-const int OMNIVORE_PACK_THREAT_SIZE = 3;
 const int ENERGY_FROM_KILL = 40;
 
 // New/Adjusted constants for reproduction
-const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.70f; // << NEW: Need 70% of max energy
+const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.80f; // << NEW: Need 70% of max energy
 const int CARNIVORE_MIN_REPRODUCE_AGE = 10;                // Age requirement
 
-const int OMNIVORE_PACK_THREAT_SIZE = 3; // If 3 or more omnivores, carnivore flees
+
+const int OMNIVORE_PACK_THREAT_SIZE = 3;
 // Energy gains from kills
 const int ENERGY_FROM_HERBIVORE_KILL = 40;
 const int ENERGY_FROM_OMNIVORE_KILL = 30; // Omnivores are tougher, maybe less net energy or same

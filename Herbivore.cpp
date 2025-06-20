@@ -14,7 +14,7 @@ const int HERBIVORE_REPRODUCE_ENERGY_COST = 15; // Cost to reproduce
 
 // New/Adjusted constants for easier reproduction
 const int HERBIVORE_GRAZE_ENERGY_GAIN = 2;      // << INCREASED: Gain more from grazing
-const float HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.60f; // << LOWERED: Need 60% of max energy
+const float HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.65f; // << LOWERED: Need 60% of max energy
 const int HERBIVORE_MIN_REPRODUCE_AGE = 3;       // << LOWERED: Can reproduce at age > 3
 
 
