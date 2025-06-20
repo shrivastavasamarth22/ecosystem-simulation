@@ -27,6 +27,24 @@ Carnivore::Carnivore(int x, int y)
     : Animal(x, y, 'C', CARNIVORE_HP, CARNIVORE_BASE_DMG, CARNIVORE_BASE_SIGHT, CARNIVORE_BASE_SPEED,
              CARNIVORE_MAX_ENERGY, CARNIVORE_STARTING_ENERGY) {}
 
+
+void Carnivore::applyAgingPenalties() {
+    if (age > 50) {
+        base_speed = std::max(1, base_speed - 1);
+        base_damage = std::max(0, base_damage - 5);
+    }
+
+    if (age > 70) {
+        base_speed = std::max(1, base_speed - 1);
+        base_damage = std::max(0, base_damage - 10);
+        base_sight_radius = std::max(1, base_sight_radius - 1);
+    }
+
+    base_speed = std::max(1, base_speed);
+    base_damage = std::max(0, base_damage);
+    base_sight_radius = std::max(1, base_sight_radius);
+}
+
 void Carnivore::updateAI(World& world) {
     target = nullptr; // Reset target each turn
 

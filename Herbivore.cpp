@@ -22,6 +22,19 @@ Herbivore::Herbivore(int x, int y)
     : Animal(x, y, 'H', HERBIVORE_HP, HERBIVORE_BASE_DMG, HERBIVORE_BASE_SIGHT, HERBIVORE_BASE_SPEED,
              HERBIVORE_MAX_ENERGY, HERBIVORE_STARTING_ENERGY) {}
 
+
+void Herbivore::applyAgingPenalties() {
+    if (age > 40) {
+        base_speed = std::max(1, base_speed - 1);
+    }
+
+    if (age > 50) {
+        base_damage = std::max(1, base_damage - 1);
+    }
+
+    base_speed = std::max(1, base_speed);
+}
+
 void Herbivore::updateAI(World& world) {
     target = nullptr; // Reset target each turn
 
@@ -41,6 +54,7 @@ void Herbivore::updateAI(World& world) {
         }
     }
 }
+
 
 void Herbivore::act(World& world) {
     // Check if target died or disappeared

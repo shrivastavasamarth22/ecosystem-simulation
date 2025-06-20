@@ -4,6 +4,10 @@
 #include "Animal.h"
 
 class Herbivore : public Animal {
+
+protected:
+    void applyAgingPenalties() override;
+
 public:
     // Constructor: Creates a Herbivore at a specific location.
     // All stats (HP, damage, etc.) are set within the .cpp file.

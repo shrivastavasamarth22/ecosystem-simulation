@@ -42,6 +42,9 @@ class Animal {
         AIState current_state;
         Animal* target;
 
+        // --- NEW for aging ---
+        virtual void applyAgingPenalties(); // Called in postTurnUpdate
+
     public:
         // Constructor updated for max_energy and base stats
         Animal(int start_x, int start_y, char sym,
@@ -71,6 +74,7 @@ class Animal {
         char getSymbol() const { return symbol; }
         int getHealth() const { return health; } // Useful for debugging
         int getEnergy() const { return energy; } // Useful for debugging
+        int getAge() const { return age; } // Getter for age
 
 };
 

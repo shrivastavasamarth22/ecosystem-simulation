@@ -4,6 +4,9 @@
 #include "Animal.h"
 
 class Omnivore : public Animal {
+protected:
+    void applyAgingPenalties() override;
+    
 public:
     // Constructor: Creates an Omnivore at a specific location.
     Omnivore(int x, int y);

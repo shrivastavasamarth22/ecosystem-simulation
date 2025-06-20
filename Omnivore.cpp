@@ -24,6 +24,23 @@ Omnivore::Omnivore(int x, int y)
     : Animal(x, y, 'O', OMNIVORE_HP, OMNIVORE_BASE_DMG, OMNIVORE_BASE_SIGHT, OMNIVORE_BASE_SPEED,
              OMNIVORE_MAX_ENERGY, OMNIVORE_STARTING_ENERGY) {}
 
+
+void Omnivore::applyAgingPenalties() {
+    if (age > 45) {
+        base_speed = std::max(1, base_speed - 1);
+        base_damage = std::max(0, base_damage - 3);
+    }
+    if (age > 60) {
+        base_sight_radius = std::max(1, base_sight_radius - 1);
+        base_damage = std::max(0, base_damage - 2);
+    }
+
+    base_speed = std::max(1, base_speed);
+    base_damage = std::max(0, base_damage);
+    base_sight_radius = std::max(1, base_sight_radius);
+}
+
+
 void Omnivore::updateAI(World& world) {
     target = nullptr;
 

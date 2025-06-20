@@ -4,6 +4,11 @@
 #include "Animal.h"
 
 class Carnivore : public Animal {
+
+protected:
+    // Applies aging penalties specific to Carnivores.
+    void applyAgingPenalties() override;
+
 public:
     // Constructor: Creates a Carnivore at a specific location.
     Carnivore(int x, int y);
