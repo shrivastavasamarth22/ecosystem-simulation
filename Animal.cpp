@@ -64,22 +64,27 @@ void Animal::postTurnUpdate() {
     const int REGEN_AMOUNT = 1;
 
     if (turns_since_damage > REGEN_DELAY_TURNS) {
-        // Removed unused 'regen_cap_hp'
         int actual_regen_cap;
+        float current_health_percentage = static_cast<float>(health) / max_health;
 
-        // If current health is below 75% of max_health, the cap is 75%.
-        // Otherwise (if current health is at or above 75%), the cap is 100% (max_health).
-        // This means if an animal takes minor damage (e.g., to 80% HP), it can heal back to 100%.
-        // If it takes major damage (e.g., to 50% HP), it can only heal back up to 75%.
-        if (static_cast<float>(health) / max_health < 0.75f) {
-             actual_regen_cap = static_cast<int>(max_health * 0.75f);
-        } else {
+        if (current_health_percentage >= 0.90f) {
+            // Tier 1: Minor or no significant injury, can heal fully
             actual_regen_cap = max_health;
+        } else if (current_health_percentage >= 0.75f) {
+            // Tier 2: Moderate injury, caps at 90%
+            actual_regen_cap = static_cast<int>(max_health * 0.90f);
+        } else if (current_health_percentage >= 0.50f) {
+            // Tier 3: Serious injury, caps at 75%
+            actual_regen_cap = static_cast<int>(max_health * 0.75f);
+        } else {
+            // Tier 4: Critical injury, caps at 60%
+            actual_regen_cap = static_cast<int>(max_health * 0.60f);
         }
 
+        // Apply regeneration if below the determined cap
         if (health < actual_regen_cap) {
             health += REGEN_AMOUNT;
-            health = std::min(health, actual_regen_cap); // Clamp to the determined cap
+            health = std::min(health, actual_regen_cap); // Ensure health doesn't exceed the cap
         }
     }
 }
