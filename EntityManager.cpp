@@ -216,6 +216,13 @@ size_t EntityManager::createOmnivore(int start_x, int start_y) {
 }
 
 void EntityManager::destroyDeadEntities() {
+    // --- This loop is INTENTIONALLY SINGLE-THREADED ---
+    // Parallelizing this loop would introduce race conditions because
+    // destroyEntity() modifies the underlying vectors (swap and pop_back),
+    // which is not thread-safe if multiple threads do it concurrently.
+    // Processing cleanup sequentially is safe.
+    // We iterate backwards to safely use swap-and-pop without invalidating indices
+    // of elements we haven't processed yet within this single thread.
     for (size_t i = num_entities; i-- > 0; ) {
         if (!is_alive[i]) {
             // The destroyEntity function handles the swap-and-pop

@@ -86,26 +86,41 @@ void World::updateSpatialGrid() {
 void World::update() {
     turn_count++;
 
+    // Phase 1: Environment & Spatial Grid (Based on positions from END of PREVIOUS turn)
     updateResources();
-    updateSpatialGrid(); // After resources regrow, before AI decides
+    updateSpatialGrid(); // Relies on positions FROM LAST TURN's Movement
 
-    // --- Call our new Systems ---
 
-    // Phase 1: Perception & Decision
+    // Phase 2: AI (Decisions for THIS turn)
     AISystem::run(m_entityManager, *this);
 
-    // Phase 2: Action (Movement and Combat Systems)
-    MovementSystem::run(m_entityManager, *this);
-    
-    // Action (Combat, Resource Consumption) MUST happen after Movement
-    ActionSystem::run(m_entityManager, *this); // This system will call MetabolismSystem::applyDamage
 
-    // Phase 3: Post-Turn Logic (Metabolism and Reproduction)
-    MetabolismSystem::run(m_entityManager); // <-- Call our new Metabolism System
-    // Cleanup - Remove dead entities from the EntityManager
+    // Phase 3: Action (Movement & Combat/Consumption)
+    // MovementSystem::run must run after AI (needs targets/states)
+    MovementSystem::run(m_entityManager, *this);
+
+    // ActionSystem::run must run after Movement (needs new positions for adjacency)
+    // This is a single-threaded system. Implicit synchronization point here.
+    ActionSystem::run(m_entityManager, *this);
+
+
+    // Phase 4: Post-Action Consequences
+    // MetabolismSystem::run reads results of actions (damage, energy)
+    MetabolismSystem::run(m_entityManager);
+
+    // Cleanup must happen after actions and metabolism finalize who is dead
+    // This is a single-threaded operation that modifies the entity list structure.
+    // Implicit synchronization point here.
     m_entityManager.destroyDeadEntities();
-    
+
+    // Reproduction happens from survivors after cleanup
+    // This is a single-threaded operation that modifies the entity list structure.
+    // Implicit synchronization point here.
     ReproductionSystem::run(m_entityManager);
+
+    // Next turn's Spatial Grid update (Phase 1) will use the positions
+    // resulting from THIS turn's Movement. This requires positions to be stable
+    // throughout Cleanup and Reproduction.
 }
 
 bool World::isEcosystemCollapsed() const {

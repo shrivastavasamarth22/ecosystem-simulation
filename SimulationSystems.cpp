@@ -257,16 +257,12 @@ namespace AISystem {
         for (size_t i = 0; i < num_entities; ++i) {
                 if (!data.is_alive[i]) continue;
 
-                // Reset targets from previous turn
-                data.target_id[i] = (size_t)-1;
-                data.target_x[i] = -1;
-                data.target_y[i] = -1;
+                data.target_id[i] = (size_t)-1; data.target_x[i] = -1; data.target_y[i] = -1;
 
-                // Variables local to the loop iteration
                 int best_food_amount = 0;
                 int food_x = -1;
                 int food_y = -1;
-                int herd_size = 0; // Used by Herbivore case
+                int herd_size = 0;
 
                 switch (data.type[i]) {
                     case AnimalType::HERBIVORE:
@@ -274,7 +270,12 @@ namespace AISystem {
                         // Herd Buff Calculation (Still here for now)
                         auto nearby_friends = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_BONUS_RADIUS, AnimalType::HERBIVORE);
                         herd_size = nearby_friends.size();
-                        // ... (HP bonus calculation and application to data.max_health[i] and data.health[i]) ...
+
+                        int hp_bonus = (herd_size > 1) ? (herd_size - 1) * HERD_HP_BONUS_PER_MEMBER : 0;
+                        int old_max_health = data.max_health[i];
+                        data.max_health[i] = data.base_max_health[i] + hp_bonus;
+                        if (data.max_health[i] > old_max_health) data.health[i] += (data.max_health[i] - old_max_health);
+                        data.health[i] = std::min(data.health[i], data.max_health[i]);
 
                         // Decision Making
                         auto predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
@@ -286,7 +287,18 @@ namespace AISystem {
                         if (data.energy[i] < static_cast<int>(data.max_energy[i] * HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
                             best_food_amount = 0; food_x = -1; food_y = -1; // Reset for this scan
                             int scan_radius = data.current_sight_radius[i];
-                            // ... (food scanning loop using local variables) ...
+                            (void)scan_radius; // <-- FIX: Explicitly mark as used
+
+                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
+                                    int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
+                                    if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
+                                        const Tile& tile = world.getTile(check_x, check_y);
+                                        if (tile.resource_type && tile.resource_amount > best_food_amount) {
+                                            best_food_amount = tile.resource_amount; food_x = check_x; food_y = check_y;
+                                        }
+                                    }
+                                }
+                            }
                             if (best_food_amount > 0) {
                                 data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
                             }
@@ -294,8 +306,7 @@ namespace AISystem {
                         // Seek out a herd - Uses calculated herd_size
                         if (herd_size <= 1) {
                             auto potential_herd = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_DETECTION_RADIUS, AnimalType::HERBIVORE);
-                            if (!potential_herd.empty()) { // Check if any potential targets found
-                                // Find a valid target ID (not self)
+                            if (!potential_herd.empty()) {
                                 size_t target_found_id = (size_t)-1;
                                 for(size_t potential_target_id : potential_herd) {
                                     if (potential_target_id != i) {
@@ -303,7 +314,7 @@ namespace AISystem {
                                         break;
                                     }
                                 }
-                                if (target_found_id != (size_t)-1) { // Check if a valid target was actually found
+                                if (target_found_id != (size_t)-1) {
                                     data.state[i] = AIState::HERDING; data.target_id[i] = target_found_id; continue;
                                 }
                             }
@@ -311,11 +322,11 @@ namespace AISystem {
                         data.state[i] = AIState::WANDERING;
                     } break;
 
-                    // ... (CARNIVORE case - requires similar fixes for local variables if they exist, use world.getAnimalsNear(data,...)) ...
+                    // ... (CARNIVORE case - no local scan_radius declared here) ...
                     case AnimalType::CARNIVORE:
                     {
-                        // ... (Carnivore AI logic remains the same, uses world.getAnimalsNear with data) ...
-                        auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::OMNIVORE);
+                        auto nearby_omnivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
+                        int pack_check_radius = 2; auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], pack_check_radius, AnimalType::OMNIVORE);
                         if(nearby_omnivores_for_pack_check.size() >= OMNIVORE_PACK_THREAT_SIZE) {
                             data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_omnivores_for_pack_check[0]; continue;
                         }
@@ -323,7 +334,6 @@ namespace AISystem {
                         if (!nearby_herbivores.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
                         }
-                        // Recalculate nearby_omnivores within full sight range for this step
                         auto nearby_omnivores_full_sight = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
                         if (!nearby_omnivores_full_sight.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_omnivores_full_sight[0]; continue;
@@ -332,7 +342,6 @@ namespace AISystem {
                     } break;
 
 
-                    // ... (OMNIVORE case - requires similar fixes for local variables, use world.getAnimalsNear(data,...)) ...
                     case AnimalType::OMNIVORE:
                     {
                         auto nearby_carnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::CARNIVORE);
@@ -343,10 +352,13 @@ namespace AISystem {
                         if (!nearby_herbivores.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
                         }
+
                         // Seek Grass if hungry - Use declared variables
                         if (data.energy[i] < static_cast<int>(data.max_energy[i] * OMNIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
                             best_food_amount = 0; food_x = -1; food_y = -1; // Reset for this scan
                             int scan_radius = data.current_sight_radius[i];
+                            (void)scan_radius; // <-- FIX: Explicitly mark as used
+
                             for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
                                     int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
                                     if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
@@ -384,97 +396,105 @@ namespace ActionSystem {
     void run(EntityManager& data, World& world) {
         size_t num_entities = data.getEntityCount();
 
+        // --- This loop is INTENTIONALLY SINGLE-THREADED ---
+        // Parallelizing this loop with a simple #pragma omp parallel for
+        // would introduce race conditions because:
+        // 1. Combat modifies data for the TARGET entity (data.health[target_id]), not just the current entity (i).
+        // 2. Resource consumption modifies the shared World::grid data (tile.resource_amount).
+        // More complex synchronization (atomics, locks) or system restructuring is needed for parallel action resolution.
+        // For now, processing actions sequentially is safe.
+
         for (size_t i = 0; i < num_entities; ++i) {
-             if (!data.is_alive[i]) continue;
+                if (!data.is_alive[i]) continue;
 
-             AIState current_state = data.state[i];
+                AIState current_state = data.state[i];
 
-             // --- Combat Action (High Priority if in combat state) ---
-             if (current_state == AIState::CHASING || current_state == AIState::PACK_HUNTING) {
-                 size_t target_entity_id = data.target_id[i];
+                // --- Combat Action (High Priority if in combat state) ---
+                if (current_state == AIState::CHASING || current_state == AIState::PACK_HUNTING) {
+                    size_t target_entity_id = data.target_id[i];
 
-                 // Check if target is valid, alive, and adjacent
-                 if (target_entity_id != (size_t)-1 && target_entity_id < data.getEntityCount() && data.is_alive[target_entity_id]) {
-                      int dx = std::abs(data.x[i] - data.x[target_entity_id]);
-                      int dy = std::abs(data.y[i] - data.y[target_entity_id]);
+                    // Check if target is valid, alive, and adjacent
+                    if (target_entity_id != (size_t)-1 && target_entity_id < data.getEntityCount() && data.is_alive[target_entity_id]) {
+                        int dx = std::abs(data.x[i] - data.x[target_entity_id]);
+                        int dy = std::abs(data.y[i] - data.y[target_entity_id]);
 
-                      // If adjacent (including diagonally)
-                      if (dx <= 1 && dy <= 1 && (dx > 0 || dy > 0))
-                      {
-                          // --- Attack ---
-                          int damage_to_deal = data.current_damage[i];
-                          MetabolismSystem::applyDamage(data, target_entity_id, damage_to_deal);
+                        // If adjacent (including diagonally)
+                        if (dx <= 1 && dy <= 1 && (dx > 0 || dy > 0))
+                        {
+                            // --- Attack ---
+                            int damage_to_deal = data.current_damage[i];
+                            MetabolismSystem::applyDamage(data, target_entity_id, damage_to_deal);
 
-                          // --- Energy Gain from Kill (if target died) ---
-                          // Check target's health *after* damage is applied this turn
-                          if (!data.is_alive[target_entity_id]) {
-                              // Calculate nutritional value of the killed entity using its ID
-                              int target_age = data.age[target_entity_id];
-                              int target_base_nut = data.base_nutritional_value[target_entity_id];
-                              int target_prime_age = data.prime_age[target_entity_id];
-                              int target_penalty = data.penalty_per_year[target_entity_id];
-                              int target_min_value = data.minimum_nutritional_value[target_entity_id];
+                            // --- Energy Gain from Kill (if target died) ---
+                            // Check target's health *after* damage is applied this turn
+                            if (!data.is_alive[target_entity_id]) {
+                                // Calculate nutritional value of the killed entity using its ID
+                                int target_age = data.age[target_entity_id];
+                                int target_base_nut = data.base_nutritional_value[target_entity_id];
+                                int target_prime_age = data.prime_age[target_entity_id];
+                                int target_penalty = data.penalty_per_year[target_entity_id];
+                                int target_min_value = data.minimum_nutritional_value[target_entity_id];
 
-                              int age_penalty = (target_age > target_prime_age) ? (target_age - target_prime_age) * target_penalty : 0;
-                              int energy_gained = std::max(target_min_value, target_base_nut - age_penalty);
+                                int age_penalty = (target_age > target_prime_age) ? (target_age - target_prime_age) * target_penalty : 0;
+                                int energy_gained = std::max(target_min_value, target_base_nut - age_penalty);
 
-                              // Add energy to the attacker, clamping at max
-                              data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
+                                // Add energy to the attacker, clamping at max
+                                data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
 
-                              // Note: AI system will handle clearing the target ID next turn when it sees the target is dead.
-                          }
-                      }
-                 }
-             }
-             // --- End Combat Action ---
+                                // Note: AI system will handle clearing the target ID next turn when it sees the target is dead.
+                            }
+                        }
+                    }
+                }
+                // --- End Combat Action ---
 
 
-             // --- Passive Resource Consumption (Happens if on food tile and hungry, regardless of most states) ---
-             // Only exclude fleeing, as fleeing animals shouldn't stop to eat.
-             if (current_state != AIState::FLEEING && data.energy[i] < data.max_energy[i]) {
-                 // Get the tile at the entity's current location using World accessors
-                 Tile& current_tile = world.getTile(data.x[i], data.y[i]);
+                // --- Passive Resource Consumption (Happens if on food tile and hungry, regardless of most states) ---
+                // Only exclude fleeing, as fleeing animals shouldn't stop to eat.
+                if (current_state != AIState::FLEEING && data.energy[i] < data.max_energy[i]) {
+                    // Get the tile at the entity's current location using World accessors
+                    Tile& current_tile = world.getTile(data.x[i], data.y[i]);
 
-                 // Check if the tile has a resource and if it's consumable
-                 if (current_tile.resource_type && current_tile.resource_amount > 0) {
-                     // Consume the resource from the tile
-                     const int RESOURCE_CONSUMPTION_AMOUNT_REQUESTED = 5; // Tunable
-                     int amount_consumed = current_tile.consume(RESOURCE_CONSUMPTION_AMOUNT_REQUESTED);
+                    // Check if the tile has a resource and if it's consumable
+                    if (current_tile.resource_type && current_tile.resource_amount > 0) {
+                        // Consume the resource from the tile
+                        const int RESOURCE_CONSUMPTION_AMOUNT_REQUESTED = 5; // Tunable
+                        int amount_consumed = current_tile.consume(RESOURCE_CONSUMPTION_AMOUNT_REQUESTED);
 
-                     // Calculate energy gained
-                     int energy_gained = amount_consumed * current_tile.resource_type->nutritional_value;
+                        // Calculate energy gained
+                        int energy_gained = amount_consumed * current_tile.resource_type->nutritional_value;
 
-                     // Add energy, clamping to max_energy
-                     data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
+                        // Add energy, clamping to max_energy
+                        data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
 
-                     // --- State Change Logic (if SEEKING_FOOD and reached target TILE) ---
-                     // If the entity was seeking food and is now on the target tile AND just ate
-                     // This logic is here because it depends on both the state AND the consumption event.
-                     if (current_state == AIState::SEEKING_FOOD && energy_gained > 0 && // Only if food was actually consumed
-                         data.target_x[i] != -1 && data.target_y[i] != -1 &&
-                         data.x[i] == data.target_x[i] && data.y[i] == data.target_y[i])
-                     {
-                         // Reached target food tile and consumed - decide next state (wander/herd)
-                         // To decide HERDING, need to check nearby friends again.
-                         // AISystem will handle this check next turn based on the entity's new position.
-                         // For now, just switch to wandering and clear the coordinate target.
-                         data.state[i] = AIState::WANDERING; // Switch to wander state
-                         data.target_x[i] = -1; // Clear coordinate target
-                         data.target_y[i] = -1;
-                         data.target_id[i] = (size_t)-1; // Ensure animal target is also clear
-                     }
-                 }
-             }
-             // --- End Passive Consumption ---
+                        // --- State Change Logic (if SEEKING_FOOD and reached target TILE) ---
+                        // If the entity was seeking food and is now on the target tile AND just ate
+                        // This logic is here because it depends on both the state AND the consumption event.
+                        if (current_state == AIState::SEEKING_FOOD && energy_gained > 0 && // Only if food was actually consumed
+                            data.target_x[i] != -1 && data.target_y[i] != -1 &&
+                            data.x[i] == data.target_x[i] && data.y[i] == data.target_y[i])
+                        {
+                            // Reached target food tile and consumed - decide next state (wander/herd)
+                            // To decide HERDING, need to check nearby friends again.
+                            // AISystem will handle this check next turn based on the entity's new position.
+                            // For now, just switch to wandering and clear the coordinate target.
+                            data.state[i] = AIState::WANDERING; // Switch to wander state
+                            data.target_x[i] = -1; // Clear coordinate target
+                            data.target_y[i] = -1;
+                            data.target_id[i] = (size_t)-1; // Ensure animal target is also clear
+                        }
+                    }
+                }
+                // --- End Passive Consumption ---
 
-             // Other states like FLEEING, WANDERING, HERDING only involve movement,
-             // which is handled by the Movement System. No action logic needed here.
-             // SEEKING_FOOD involves movement + consumption, consumption handled above.
+                // Other states like FLEEING, WANDERING, HERDING only involve movement,
+                // which is handled by the Movement System. No action logic needed here.
+                // SEEKING_FOOD involves movement + consumption, consumption handled above.
 
-             // No state-based switch needed for the rest, as actions (combat/consume) are handled above.
-             // The state primarily dictates movement (handled by MovementSystem).
-             // A default case is not strictly needed if all states are implicitly handled by the logic above.
-             // However, if you want to be explicit or print errors for unknown states, you could add one.
+                // No state-based switch needed for the rest, as actions (combat/consume) are handled above.
+                // The state primarily dictates movement (handled by MovementSystem).
+                // A default case is not strictly needed if all states are implicitly handled by the logic above.
+                // However, if you want to be explicit or print errors for unknown states, you could add one.
         } // End loop over entities
     } // End run function
 
@@ -485,13 +505,15 @@ namespace ReproductionSystem {
     void run(EntityManager& data) {
         size_t num_entities_before_reproduction = data.getEntityCount(); // Process based on count *before* adding
 
-        // We cannot add entities while iterating with index i directly
-        // because it invalidates indices.
-        // Reproduction creates new entities at the end of vectors.
-        // A common pattern is to collect reproduction requests and then process them.
-
-        // This simple loop processes the CURRENT state of entities up to the count *before* reproduction.
-        // New entities created this turn will be processed in the *next* turn.
+       // --- This loop is INTENTIONALLY SINGLE-THREADED ---
+        // Parallelizing this loop with a simple #pragma omp parallel for
+        // would introduce race conditions because calling data.create...()
+        // modifies the underlying vectors (push_back), which is not thread-safe
+        // if multiple threads do it concurrently.
+        // Collecting entities that reproduce and then creating them in a separate
+        // single-threaded step is possible, but adds complexity for a potentially
+        // small gain since reproduction events are less frequent than updates.
+        // For now, processing reproduction sequentially is safe.
         for (size_t i = 0; i < num_entities_before_reproduction; ++i) {
             if (!data.is_alive[i]) continue;
 
