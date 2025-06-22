@@ -245,148 +245,168 @@ namespace MovementSystem {
 
 namespace AISystem {
 
-    void run(EntityManager& data, const World& world) {
-        size_t num_entities = data.getEntityCount();
+void run(EntityManager& data, const World& world) {
+    size_t num_entities = data.getEntityCount();
 
-        // --- Parallelize the loop using OpenMP ---
-        // Each thread processes a chunk of entities.
-        // Reads (world, data.is_alive, data.type, data.x, data.y, etc.) are safe.
-        // Writes (data.state, data.target_id, data.target_x, data.target_y, data.max_health, data.health)
-        // must ONLY be to the current entity 'i'. This is true for the AI logic.
-        #pragma omp parallel for
-        for (size_t i = 0; i < num_entities; ++i) {
-                if (!data.is_alive[i]) continue;
+    // --- Parallelize the loop using OpenMP ---
+    // Each thread processes a chunk of entities.
+    // Reads (world, data.is_alive, data.type, data.x, data.y, etc.) are safe.
+    // Writes (data.state, data.target_id, data.target_x, data.target_y, data.max_health, data.health)
+    // must ONLY be to the current entity 'i'. This is true for the AI logic.
+    #pragma omp parallel for
+    for (size_t i = 0; i < num_entities; ++i) {
+            if (!data.is_alive[i]) continue;
 
-                data.target_id[i] = (size_t)-1; data.target_x[i] = -1; data.target_y[i] = -1;
+            data.target_id[i] = (size_t)-1; data.target_x[i] = -1; data.target_y[i] = -1;
 
-                int best_food_amount = 0;
-                int food_x = -1;
-                int food_y = -1;
-                int herd_size = 0;
+            // --- Variables local to the loop iteration ---
+            // Use best_food_energy instead of best_food_amount
+            int best_food_energy = 0; // <-- Changed
+            int food_x = -1;
+            int food_y = -1;
+            int herd_size = 0;
 
-                switch (data.type[i]) {
-                    case AnimalType::HERBIVORE:
-                    {
-                        // Herd Buff Calculation (Still here for now)
-                        auto nearby_friends = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_BONUS_RADIUS, AnimalType::HERBIVORE);
-                        herd_size = nearby_friends.size();
+            switch (data.type[i]) {
+                case AnimalType::HERBIVORE:
+                {
+                    // Herd Buff Calculation (Still here for now)
+                    auto nearby_friends = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_BONUS_RADIUS, AnimalType::HERBIVORE);
+                    herd_size = nearby_friends.size();
 
-                        int hp_bonus = (herd_size > 1) ? (herd_size - 1) * HERD_HP_BONUS_PER_MEMBER : 0;
-                        int old_max_health = data.max_health[i];
-                        data.max_health[i] = data.base_max_health[i] + hp_bonus;
-                        if (data.max_health[i] > old_max_health) data.health[i] += (data.max_health[i] - old_max_health);
-                        data.health[i] = std::min(data.health[i], data.max_health[i]);
+                    int hp_bonus = (herd_size > 1) ? (herd_size - 1) * HERD_HP_BONUS_PER_MEMBER : 0;
+                    int old_max_health = data.max_health[i];
+                    data.max_health[i] = data.base_max_health[i] + hp_bonus;
+                    if (data.max_health[i] > old_max_health) data.health[i] += (data.max_health[i] - old_max_health);
+                    data.health[i] = std::min(data.health[i], data.max_health[i]);
 
-                        // Decision Making
-                        auto predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
-                        auto omni_predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
-                        predators.insert(predators.end(), omni_predators.begin(), omni_predators.end());
-                        if (!predators.empty()) {
-                            data.state[i] = AIState::FLEEING; data.target_id[i] = predators[0]; continue;
-                        }
-                        if (data.energy[i] < static_cast<int>(data.max_energy[i] * HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
-                            best_food_amount = 0; food_x = -1; food_y = -1; // Reset for this scan
-                            int scan_radius = data.current_sight_radius[i];
-                            (void)scan_radius; // <-- FIX: Explicitly mark as used
+                    // Decision Making
+                    auto predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
+                    auto omni_predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
+                    predators.insert(predators.end(), omni_predators.begin(), omni_predators.end());
+                    if (!predators.empty()) {
+                        data.state[i] = AIState::FLEEING; data.target_id[i] = predators[0]; continue;
+                    }
 
-                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
-                                    int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
-                                    if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
-                                        const Tile& tile = world.getTile(check_x, check_y);
-                                        if (tile.resource_type && tile.resource_amount > best_food_amount) {
-                                            best_food_amount = tile.resource_amount; food_x = check_x; food_y = check_y;
+                    // Seek Food if hungry - Prioritize by ENERGY
+                    if (data.energy[i] < static_cast<int>(data.max_energy[i] * HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
+                        // Use best_food_energy
+                        best_food_energy = 0; food_x = -1; food_y = -1; // Reset for this scan
+                        int scan_radius = data.current_sight_radius[i];
+                        (void)scan_radius;
+
+                        for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
+                                int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
+                                if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
+                                    const Tile& tile = world.getTile(check_x, check_y);
+                                    // --- MODIFIED COMPARISON ---
+                                    if (tile.resource_type) { // Ensure there is a resource type
+                                        int potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
+                                        if (potential_energy > best_food_energy) { // <-- Compare energy
+                                            best_food_energy = potential_energy; // <-- Store energy
+                                            food_x = check_x; food_y = check_y;
                                         }
                                     }
                                 }
                             }
-                            if (best_food_amount > 0) {
-                                data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
+                        }
+                        // Check if any food energy was found
+                        if (best_food_energy > 0) { // <-- Check energy > 0
+                            data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
+                        }
+                    }
+
+                    // Seek out a herd if not in one - Uses calculated herd_size
+                    if (herd_size <= 1) {
+                        auto potential_herd = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_DETECTION_RADIUS, AnimalType::HERBIVORE);
+                        if (!potential_herd.empty()) {
+                            size_t target_found_id = (size_t)-1;
+                            for(size_t potential_target_id : potential_herd) {
+                                if (potential_target_id != i) {
+                                    target_found_id = potential_target_id;
+                                    break;
+                                }
+                            }
+                            if (target_found_id != (size_t)-1) {
+                                data.state[i] = AIState::HERDING; data.target_id[i] = target_found_id; continue;
                             }
                         }
-                        // Seek out a herd - Uses calculated herd_size
-                        if (herd_size <= 1) {
-                            auto potential_herd = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_DETECTION_RADIUS, AnimalType::HERBIVORE);
-                            if (!potential_herd.empty()) {
-                                size_t target_found_id = (size_t)-1;
-                                for(size_t potential_target_id : potential_herd) {
-                                    if (potential_target_id != i) {
-                                        target_found_id = potential_target_id;
-                                        break;
-                                    }
-                                }
-                                if (target_found_id != (size_t)-1) {
-                                    data.state[i] = AIState::HERDING; data.target_id[i] = target_found_id; continue;
-                                }
-                            }
-                        }
-                        data.state[i] = AIState::WANDERING;
-                    } break;
+                    }
+                    data.state[i] = AIState::WANDERING;
+                } break;
 
-                    // ... (CARNIVORE case - no local scan_radius declared here) ...
-                    case AnimalType::CARNIVORE:
-                    {
-                        auto nearby_omnivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
-                        int pack_check_radius = 2; auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], pack_check_radius, AnimalType::OMNIVORE);
-                        if(nearby_omnivores_for_pack_check.size() >= OMNIVORE_PACK_THREAT_SIZE) {
-                            data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_omnivores_for_pack_check[0]; continue;
-                        }
-                        auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::HERBIVORE);
-                        if (!nearby_herbivores.empty()) {
-                            data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
-                        }
-                        auto nearby_omnivores_full_sight = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
-                        if (!nearby_omnivores_full_sight.empty()) {
-                            data.state[i] = AIState::CHASING; data.target_id[i] = nearby_omnivores_full_sight[0]; continue;
-                        }
-                        data.state[i] = AIState::WANDERING;
-                    } break;
+                // ... (CARNIVORE case remains the same) ...
+                case AnimalType::CARNIVORE:
+                {
+                    auto nearby_omnivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
+                    int pack_check_radius = 2; auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], pack_check_radius, AnimalType::OMNIVORE);
+                    if(nearby_omnivores_for_pack_check.size() >= OMNIVORE_PACK_THREAT_SIZE) {
+                        data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_omnivores_for_pack_check[0]; continue;
+                    }
+                    auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::HERBIVORE);
+                    if (!nearby_herbivores.empty()) {
+                        data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
+                    }
+                    auto nearby_omnivores_full_sight = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
+                    if (!nearby_omnivores_full_sight.empty()) {
+                        data.state[i] = AIState::CHASING; data.target_id[i] = nearby_omnivores_full_sight[0]; continue;
+                    }
+                    data.state[i] = AIState::WANDERING;
+                } break;
 
 
-                    case AnimalType::OMNIVORE:
-                    {
-                        auto nearby_carnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::CARNIVORE);
-                        if(nearby_carnivores_for_pack_check.size() >= OMNIVORE_PACK_HUNT_SIZE) {
-                            data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_carnivores_for_pack_check[0]; continue;
-                        }
-                        auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::HERBIVORE);
-                        if (!nearby_herbivores.empty()) {
-                            data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
-                        }
+                case AnimalType::OMNIVORE:
+                {
+                    auto nearby_carnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::CARNIVORE);
+                    if(nearby_carnivores_for_pack_check.size() >= OMNIVORE_PACK_HUNT_SIZE) {
+                        data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_carnivores_for_pack_check[0]; continue;
+                    }
+                    auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::HERBIVORE);
+                    if (!nearby_herbivores.empty()) {
+                        data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
+                    }
 
-                        // Seek Grass if hungry - Use declared variables
-                        if (data.energy[i] < static_cast<int>(data.max_energy[i] * OMNIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
-                            best_food_amount = 0; food_x = -1; food_y = -1; // Reset for this scan
-                            int scan_radius = data.current_sight_radius[i];
-                            (void)scan_radius; // <-- FIX: Explicitly mark as used
+                    // Seek Grass if hungry - Prioritize by ENERGY
+                    if (data.energy[i] < static_cast<int>(data.max_energy[i] * OMNIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
+                        // Use best_food_energy
+                        best_food_energy = 0; food_x = -1; food_y = -1; // Reset for this scan
+                        int scan_radius = data.current_sight_radius[i];
+                        (void)scan_radius;
 
-                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
-                                    int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
-                                    if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
-                                        const Tile& tile = world.getTile(check_x, check_y);
-                                        if (tile.resource_type && tile.resource_amount > best_food_amount) {
-                                            best_food_amount = tile.resource_amount; food_x = check_x; food_y = check_y;
+                        for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
+                                int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
+                                if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
+                                    const Tile& tile = world.getTile(check_x, check_y);
+                                    // --- MODIFIED COMPARISON ---
+                                    if (tile.resource_type) { // Ensure there is a resource type
+                                        int potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
+                                        if (potential_energy > best_food_energy) { // <-- Compare energy
+                                            best_food_energy = potential_energy; // <-- Store energy
+                                            food_x = check_x; food_y = check_y;
                                         }
                                     }
                                 }
                             }
-                            if (best_food_amount > 0) {
-                                data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
+                        }
+                        // Check if any food energy was found
+                        if (best_food_energy > 0) { // <-- Check energy > 0
+                            data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
+                        }
+                    }
+
+                    auto nearby_carnivores_for_hunt = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
+                    if (!nearby_carnivores_for_hunt.empty()) {
+                        size_t potential_carnivore_target_id = nearby_carnivores_for_hunt[0];
+                        if (potential_carnivore_target_id != (size_t)-1 && potential_carnivore_target_id < data.getEntityCount() && data.is_alive[potential_carnivore_target_id]) {
+                            auto allies_near_target = world.getAnimalsNear(data, data.x[potential_carnivore_target_id], data.y[potential_carnivore_target_id], 2, AnimalType::OMNIVORE);
+                            if(allies_near_target.size() >= OMNIVORE_PACK_HUNT_SIZE) {
+                                data.state[i] = AIState::PACK_HUNTING; data.target_id[i] = potential_carnivore_target_id; continue;
                             }
                         }
-                        auto nearby_carnivores_for_hunt = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
-                        if (!nearby_carnivores_for_hunt.empty()) {
-                            size_t potential_carnivore_target_id = nearby_carnivores_for_hunt[0];
-                            if (potential_carnivore_target_id != (size_t)-1 && potential_carnivore_target_id < data.getEntityCount() && data.is_alive[potential_carnivore_target_id]) {
-                                auto allies_near_target = world.getAnimalsNear(data, data.x[potential_carnivore_target_id], data.y[potential_carnivore_target_id], 2, AnimalType::OMNIVORE);
-                                if(allies_near_target.size() >= OMNIVORE_PACK_HUNT_SIZE) {
-                                    data.state[i] = AIState::PACK_HUNTING; data.target_id[i] = potential_carnivore_target_id; continue;
-                                }
-                            }
-                        }
-                        data.state[i] = AIState::WANDERING;
-                    } break;
-                    default: data.state[i] = AIState::WANDERING; break;
-                }
+                    }
+                    data.state[i] = AIState::WANDERING;
+                } break;
+                default: data.state[i] = AIState::WANDERING; break;
+            }
         }
     }
 }
