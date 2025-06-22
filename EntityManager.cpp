@@ -1,5 +1,5 @@
-#include "EntityManager.h"
-#include "AnimalConfig.h"
+#include "includes/EntityManager.h"
+#include "includes/AnimalConfig.h"
 
 EntityManager::EntityManager() : num_entities(0) {}
 
@@ -206,4 +206,13 @@ size_t EntityManager::createOmnivore(int start_x, int start_y) {
     minimum_nutritional_value[id] = OMNIVORE_MINIMUM_VALUE;
 
     return id;
+}
+
+void EntityManager::destroyDeadEntities() {
+    for (size_t i = num_entities; i-- > 0; ) {
+        if (!is_alive[i]) {
+            // The destroyEntity function handles the swap-and-pop
+            destroyEntity(i);
+        }
+    }
 }

@@ -70,7 +70,6 @@ class Animal {
         virtual int getNutritionalValue() const;
         
         void takeDamage(int amount);
-        void postTurnUpdate(); // Now needs world for boundary checks if hunger causes death
         bool isDead() const;
         void kill();
         

@@ -13,6 +13,7 @@ public:
 
     size_t createEntity();
     void destroyEntity(size_t index);
+    void destroyDeadEntities();
     size_t createHerbivore(int start_x, int start_y);
     size_t createCarnivore(int start_x, int start_y);
     size_t createOmnivore(int start_x, int start_y);
