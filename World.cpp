@@ -2,18 +2,39 @@
 #include "Herbivore.h"
 #include "Carnivore.h"
 #include "Omnivore.h"
+#include "Resource.h" // Include Resource definitions
+#include "Tile.h"     // Include Tile definition
 #include <iostream>
 #include <vector>
 #include <random>
 #include <algorithm>
 
-// Extern the global random number generator defined in Animal.cpp
 extern std::mt19937 rng;
 
-World::World(int w, int h) : width(w), height(h), turn_count(0) {}
+// Constructor initializes grid size
+World::World(int w, int h) : width(w), height(h), turn_count(0),
+                             grid(height, std::vector<Tile>(width)) // <-- Initialize grid with Tiles
+{}
 
 void World::init(int initial_herbivores, int initial_carnivores, int initial_omnivores) {
-    animals.clear(); // Ensure the world is empty before initializing
+    animals.clear(); // Ensure animals vector is empty
+
+    // --- Initialize Resources on the Grid ---
+    // A simple approach: fill most of the grid with grass initially
+    std::uniform_int_distribution<int> dist_resource_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            // Assign Grass resource to most tiles
+            if (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < 0.9f) { // 90% chance of grass
+                 grid[r][c] = Tile(&RESOURCE_GRASS, dist_resource_amount(rng));
+            } else {
+                 grid[r][c] = Tile(); // Empty tile
+            }
+        }
+    }
+
+
+    // --- Initialize Animals ---
     std::uniform_int_distribution<int> distX(0, width - 1);
     std::uniform_int_distribution<int> distY(0, height - 1);
 
@@ -31,14 +52,15 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
 void World::update() {
     turn_count++;
 
-    // Shuffle the order of animals to ensure fairness in each turn.
-    // This prevents animals created first from always getting to act first.
+    // --- Phase 0: Update Resources ---
+    updateResources();
+
+    // Shuffle for fairness
     std::shuffle(animals.begin(), animals.end(), rng);
 
-    // --- NEW THREE-PHASE UPDATE LOOP ---
+    // --- NEW THREE-PHASE ANIMAL UPDATE LOOP ---
 
     // Phase 1: AI Update (Perception and Decision)
-    // All animals perceive the world and decide on their next action *before* anyone moves.
     for (auto& animal : animals) {
         if (!animal->isDead()) {
             animal->updateAI(*this);
@@ -46,7 +68,6 @@ void World::update() {
     }
 
     // Phase 2: Action
-    // All animals execute their chosen action (move, attack, etc.).
     for (auto& animal : animals) {
         if (!animal->isDead()) {
             animal->act(*this);
@@ -57,28 +78,35 @@ void World::update() {
     std::vector<std::unique_ptr<Animal>> new_animals;
     for (auto& animal : animals) {
         if (!animal->isDead()) {
-            // Apply aging, hunger, regeneration, and passive energy loss
-            animal->postTurnUpdate(); // Pass world object
+            animal->postTurnUpdate(); // Apply aging, hunger, regen, passive energy loss
 
             // Check for reproduction
             auto newborn = animal->reproduce();
             if (newborn) {
+                // Important: New animal starts on the same tile as parent
                 new_animals.push_back(std::move(newborn));
             }
         }
     }
 
-    // Add newborn animals to the world
     for (auto& newborn : new_animals) {
         animals.push_back(std::move(newborn));
     }
 
-    // Remove all dead animals from the simulation
     cleanup();
 }
 
+// --- NEW Resource Update Function ---
+void World::updateResources() {
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            grid[r][c].regrow(); // Tell each tile to regrow its resource
+        }
+    }
+}
+
+
 void World::cleanup() {
-    // The erase-remove idiom is an efficient way to remove elements from a vector
     animals.erase(
         std::remove_if(animals.begin(), animals.end(),
             [](const std::unique_ptr<Animal>& a) {
@@ -88,47 +116,82 @@ void World::cleanup() {
     );
 }
 
+// getAnimalsNear template implementation is in the header file
+
+// --- NEW Tile Accessors ---
+Tile& World::getTile(int x, int y) {
+    // Basic boundary check
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+        return grid[y][x];
+    }
+    // Handle invalid access - could throw an exception or return a default tile
+    // For simplicity, let's return a reference to a static empty tile.
+    // NOTE: This is NOT ideal for writing, only for reading.
+    // A better solution for robustness would be to add checks *before* calling this.
+    static Tile empty_tile; // Sentinel empty tile
+    return empty_tile; // Warning: Accessing this returned tile might be unexpected.
+                      // Ensure you call getTile only for valid coordinates.
+}
+
+const Tile& World::getTile(int x, int y) const {
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+        return grid[y][x];
+    }
+    static const Tile empty_tile_const; // Sentinel empty tile for const access
+    return empty_tile_const;
+}
+
+
 void World::draw() const {
-    // Create a grid for drawing, initialized with a background character
-    std::vector<std::vector<char>> grid(height, std::vector<char>(width, '.'));
+    // Create a grid for drawing, initialized with tile symbols
+    std::vector<std::vector<char>> draw_grid(height, std::vector<char>(width));
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            draw_grid[r][c] = grid[r][c].getSymbol(); // <-- Use Tile's symbol
+        }
+    }
+
 
     int herbivore_count = 0;
     int carnivore_count = 0;
     int omnivore_count = 0;
 
+    // Draw animals over the resource symbols
     for (const auto& animal : animals) {
-        // We only care about living animals
         if (!animal->isDead()) {
-            // To avoid clutter, only draw if the spot is empty
-            if (grid[animal->getY()][animal->getX()] == '.') {
-                 grid[animal->getY()][animal->getX()] = animal->getSymbol();
+            // Ensure animal is within grid boundaries (should be guaranteed by movement)
+            if (animal->getX() >= 0 && animal->getX() < width &&
+                animal->getY() >= 0 && animal->getY() < height)
+            {
+                // If multiple animals are on the same spot, decide how to draw (e.g., draw the last one)
+                draw_grid[animal->getY()][animal->getX()] = animal->getSymbol();
             }
-            // Increment counters based on the animal's actual type, not just symbol
+
+            // Count animals
             if (dynamic_cast<Herbivore*>(animal.get())) herbivore_count++;
             else if (dynamic_cast<Carnivore*>(animal.get())) carnivore_count++;
             else if (dynamic_cast<Omnivore*>(animal.get())) omnivore_count++;
         }
     }
 
-    // Clear screen for a clean redraw
     #ifdef _WIN32
     system("cls");
     #else
     system("clear");
     #endif
 
-    std::cout << "--- Intelligent Agent Simulation ---" << std::endl;
+    std::cout << "--- Resource Ecosystem Simulation ---" << std::endl;
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
-            std::cout << grid[r][c] << ' ';
+            std::cout << draw_grid[r][c] << ' ';
         }
         std::cout << std::endl;
     }
     std::cout << "------------------------------------" << std::endl;
     std::cout << "Turn: " << turn_count
-              << " | Herbivores (H): " << herbivore_count
-              << " | Carnivores (C): " << carnivore_count // Note the updated symbol
-              << " | Omnivores (O): " << omnivore_count << std::endl;
+              << " | H: " << herbivore_count
+              << " | C: " << carnivore_count
+              << " | O: " << omnivore_count << std::endl;
 }
 
 bool World::isEcosystemCollapsed() const {
@@ -146,7 +209,6 @@ bool World::isEcosystemCollapsed() const {
         else if (dynamic_cast<Omnivore*>(animal.get())) omnivore_count++;
     }
 
-    // The ecosystem is considered collapsed if any one species is completely wiped out.
-    // This creates a more dynamic end condition than waiting for all but one to die.
+    // Ecosystem collapses if any species is extinct
     return (herbivore_count == 0 || carnivore_count == 0 || omnivore_count == 0);
 }
