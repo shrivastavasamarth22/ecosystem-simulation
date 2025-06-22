@@ -2,12 +2,15 @@
 #include "includes/Resource.h"
 #include "includes/Tile.h"
 #include "includes/SimulationSystems.h"
+#include "includes/AnimalConfig.h"
 #include <iostream>
 #include <vector>
 #include <random>
 #include <algorithm>
 
 extern std::mt19937 rng;
+
+
 
 World::World(int w, int h, int cell_size)
     : width(w), height(h), turn_count(0),
@@ -90,22 +93,58 @@ void World::update() {
 
     // --- Call our new Systems ---
 
-    // Phase 1: Perception & Decision (AI System - needs implementing)
-    // AISystem::run(m_entityManager, *this);
+    // Phase 1: Perception & Decision
+    AISystem::run(m_entityManager, *this);
 
-    // Phase 2: Action (Movement and Combat Systems - needs implementing)
-    // MovementSystem::run(m_entityManager, *this);
-    // ActionSystem::run(m_entityManager, *this); // This system will call MetabolismSystem::applyDamage
+    // Phase 2: Action (Movement and Combat Systems)
+    MovementSystem::run(m_entityManager, *this);
+    
+    // Action (Combat, Resource Consumption) MUST happen after Movement
+    ActionSystem::run(m_entityManager, *this); // This system will call MetabolismSystem::applyDamage
 
     // Phase 3: Post-Turn Logic (Metabolism and Reproduction)
-    MetablismSystem::run(m_entityManager); // <-- Call our new Metabolism System
-    // ReproductionSystem::run(m_entityManager, *this); // Needs implementing
-
+    MetabolismSystem::run(m_entityManager); // <-- Call our new Metabolism System
     // Cleanup - Remove dead entities from the EntityManager
-    m_entityManager.destroyDeadEntities(); // <-- Replace old cleanup()
+    m_entityManager.destroyDeadEntities();
+    
+    ReproductionSystem::run(m_entityManager);
+}
 
-    // !!! WARNING !!!
-    // Many systems are still missing. The simulation will not run correctly yet.
+bool World::isEcosystemCollapsed() const {
+    const EntityManager& data = getEntityManager();
+    size_t num_entities = data.getEntityCount();
+
+    if (num_entities == 0) {
+        return true; // No entities left
+    }
+
+    int herbivore_count = 0;
+    int carnivore_count = 0;
+    int omnivore_count = 0;
+
+    // Iterate through all entities in the EntityManager
+    for (size_t i = 0; i < num_entities; ++i) {
+        // We only count living entities for population checks
+        if (data.is_alive[i]) {
+            switch (data.type[i]) {
+                case AnimalType::HERBIVORE:
+                    herbivore_count++;
+                    break;
+                case AnimalType::CARNIVORE:
+                    carnivore_count++;
+                    break;
+                case AnimalType::OMNIVORE:
+                    omnivore_count++;
+                    break;
+                default:
+                    // Should not happen with known types
+                    break;
+            }
+        }
+    }
+
+    // The ecosystem is considered collapsed if any one species is completely wiped out (has 0 living members).
+    return (herbivore_count == 0 || carnivore_count == 0 || omnivore_count == 0);
 }
 
 void World::draw() const {
@@ -172,11 +211,6 @@ void World::draw() const {
               << " | O: " << omnivore_count << std::endl;
 }
 
-bool World::isEcosystemCollapsed() const {
-    // This function will be rewritten to use m_entityManager
-    return false; // Placeholder
-}
-
 
 // --- These functions are still valid ---
 void World::updateResources() {
@@ -185,6 +219,35 @@ void World::updateResources() {
             grid[r][c].regrow();
         }
     }
+}
+
+std::vector<size_t> World::getAnimalsNear(const EntityManager& data, int x, int y, int radius, AnimalType target_type) const {
+    std::vector<size_t> nearby_ids;
+    if (radius < 0) return nearby_ids; // Invalid radius
+
+    int radius_sq = radius * radius;
+
+    int start_cell_x = std::max(0, (x - radius) / spatial_grid_cell_size);
+    int end_cell_x   = std::min(spatial_grid_width - 1, (x + radius) / spatial_grid_cell_size);
+    int start_cell_y = std::max(0, (y - radius) / spatial_grid_cell_size);
+    int end_cell_y   = std::min(spatial_grid_height - 1, (y + radius) / spatial_grid_cell_size);
+
+    for (int cell_y = start_cell_y; cell_y <= end_cell_y; ++cell_y) {
+        for (int cell_x = start_cell_x; cell_x <= end_cell_x; ++cell_x) {
+            for (size_t entity_id : spatial_grid[cell_y][cell_x]) {
+                // Check if the entity is alive and of the correct type (direct comparison)
+                if (data.is_alive[entity_id] && data.type[entity_id] == target_type) {
+                    // Final distance check
+                    int dx = data.x[entity_id] - x;
+                    int dy = data.y[entity_id] - y;
+                    if (dx * dx + dy * dy <= radius_sq) {
+                        nearby_ids.push_back(entity_id);
+                    }
+                }
+            }
+        }
+    }
+    return nearby_ids;
 }
 
 Tile& World::getTile(int x, int y) {
@@ -202,3 +265,4 @@ const Tile& World::getTile(int x, int y) const {
     static const Tile empty_tile_const;
     return empty_tile_const;
 }
+

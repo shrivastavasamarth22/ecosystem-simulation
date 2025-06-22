@@ -3,19 +3,23 @@
 # -std=c++17 sets the C++ standard.
 # -Wall and -Wextra enable most compiler warnings, which is good practice.
 # -g includes debugging information in the executable.
+# -I includes/ adds the includes directory to the header search path.
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -g
+CXXFLAGS = -std=c++17 -Wall -Wextra -g -I includes/
 
 # The name of the final executable file.
 TARGET = simulation
 
 # A list of all the source code files (.cpp) in the project.
 # The make utility will automatically find the corresponding .h files.
-SOURCES = main.cpp World.cpp Animal.cpp Herbivore.cpp Carnivore.cpp Omnivore.cpp Resource.cpp Tile.cpp
+SOURCES = main.cpp World.cpp EntityManager.cpp SimulationSystems.cpp Resource.cpp Tile.cpp
 
 # This line automatically creates a list of object files (.o) from the source files.
 # e.g., "main.cpp" becomes "main.o".
-OBJECTS = $(SOURCES:.cpp=.o)
+OBJECTS = $(filter %.o, $(SOURCES:.cpp=.o))
+
+# Header files for dependency tracking
+HEADERS = $(wildcard includes/*.h)
 
 # The default rule, which is run when you just type "make".
 # It says that to build "all", you first need to build the TARGET.
@@ -31,7 +35,8 @@ $(TARGET): $(OBJECTS)
 # $< is an automatic variable that means "the first prerequisite" (the .cpp file).
 # $@ is an automatic variable that means "the target" (the .o file).
 # -c means "compile only, do not link".
-%.o: %.cpp
+# This rule now also depends on header files, so object files are rebuilt when headers change.
+%.o: %.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # A rule to clean up the directory.

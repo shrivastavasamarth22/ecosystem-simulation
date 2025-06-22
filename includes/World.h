@@ -3,9 +3,11 @@
 
 #include "Tile.h"
 #include "EntityManager.h"
+#include "AnimalTypes.h"
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <type_traits>
 
 using SpatialGridCell = std::vector<size_t>;
 
@@ -57,6 +59,9 @@ class World {
     // Allow Systems to access the entity manager
     const EntityManager& getEntityManager() const { return m_entityManager; }
     EntityManager& getEntityManager() { return m_entityManager; }
+
+    std::vector<size_t> getAnimalsNear(const EntityManager& data, int x, int y, int radius, AnimalType target_type) const;
+
 };
 
 #endif // WORLD_H
