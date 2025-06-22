@@ -20,9 +20,12 @@ int main() {
     const int SIMULATION_SPEED_MS = 500;
     const int MAX_TURNS = 2000; // A higher turn limit for the more complex simulation.
 
+    const int SPATIAL_GRID_CELL_SIZE = 15; // Tunable: Should be ~2x average sight radius
+
+
 
     // --- Simulation Setup ---
-    World world(WORLD_WIDTH, WORLD_HEIGHT);
+    World world(WORLD_WIDTH, WORLD_HEIGHT, SPATIAL_GRID_CELL_SIZE); // Pass cell size
     world.init(INITIAL_HERBIVORES, INITIAL_CARNIVORES, INITIAL_OMNIVORES);
 
     std::cout << "Starting Intelligent Agent Simulation..." << std::endl;

@@ -11,10 +11,19 @@
 
 extern std::mt19937 rng;
 
-// Constructor initializes grid size
-World::World(int w, int h) : width(w), height(h), turn_count(0),
-                             grid(height, std::vector<Tile>(width)) // <-- Initialize grid with Tiles
-{}
+// Constructor updated for spatial grid
+World::World(int w, int h, int cell_size)
+    : width(w), height(h), turn_count(0),
+      grid(height, std::vector<Tile>(width)),
+      spatial_grid_cell_size(cell_size)
+{
+    // Calculate dimensions of the spatial grid
+    spatial_grid_width = (width + cell_size - 1) / cell_size;
+    spatial_grid_height = (height + cell_size - 1) / cell_size;
+
+    // Initialize the spatial grid itself
+    spatial_grid.resize(spatial_grid_height, std::vector<SpatialGridCell>(spatial_grid_width));
+}
 
 void World::init(int initial_herbivores, int initial_carnivores, int initial_omnivores) {
     animals.clear(); // Ensure animals vector is empty
@@ -49,16 +58,43 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
     }
 }
 
+void World::updateSpatialGrid() {
+    // 1. Clear the spatial grid from the previous turn
+    for (int r = 0; r < spatial_grid_height; ++r) {
+        for (int c = 0; c < spatial_grid_width; ++c) {
+            spatial_grid[r][c].clear();
+        }
+    }
+
+    // 2. Populate the spatial grid with current animal positions
+    for (auto& animal : animals) {
+        if (!animal->isDead()) {
+            int cell_x = animal->getX() / spatial_grid_cell_size;
+            int cell_y = animal->getY() / spatial_grid_cell_size;
+
+            // Boundary checks for safety
+            if (cell_x >= 0 && cell_x < spatial_grid_width &&
+                cell_y >= 0 && cell_y < spatial_grid_height)
+            {
+                spatial_grid[cell_y][cell_x].push_back(animal.get());
+            }
+        }
+    }
+}
+
+// --- update() function now includes spatial grid update ---
 void World::update() {
     turn_count++;
 
-    // --- Phase 0: Update Resources ---
+    // Phase 0: Update Environment
     updateResources();
 
-    // Shuffle for fairness
-    std::shuffle(animals.begin(), animals.end(), rng);
+    // --- NEW: Phase 0.5: Update Spatial Grid ---
+    // This MUST happen *before* the AI update, as the AI relies on it.
+    updateSpatialGrid();
 
-    // --- NEW THREE-PHASE ANIMAL UPDATE LOOP ---
+    // Shuffle for fairness (still a good idea)
+    std::shuffle(animals.begin(), animals.end(), rng);
 
     // Phase 1: AI Update (Perception and Decision)
     for (auto& animal : animals) {
@@ -78,12 +114,10 @@ void World::update() {
     std::vector<std::unique_ptr<Animal>> new_animals;
     for (auto& animal : animals) {
         if (!animal->isDead()) {
-            animal->postTurnUpdate(); // Apply aging, hunger, regen, passive energy loss
+            animal->postTurnUpdate();
 
-            // Check for reproduction
             auto newborn = animal->reproduce();
             if (newborn) {
-                // Important: New animal starts on the same tile as parent
                 new_animals.push_back(std::move(newborn));
             }
         }
