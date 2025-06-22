@@ -1,9 +1,9 @@
-#include "World.h"
-#include "Herbivore.h"
-#include "Carnivore.h"
-#include "Omnivore.h"
-#include "Resource.h" // Include Resource definitions
-#include "Tile.h"     // Include Tile definition
+#include "includes/World.h"
+#include "includes/Herbivore.h"
+#include "includes/Carnivore.h"
+#include "includes/Omnivore.h"
+#include "includes/Resource.h" // Include Resource definitions
+#include "includes/Tile.h"     // Include Tile definition
 #include <iostream>
 #include <vector>
 #include <random>

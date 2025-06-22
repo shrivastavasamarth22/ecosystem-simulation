@@ -1,5 +1,5 @@
-#include "Tile.h"
-#include "Animal.h"
+#include "includes/Tile.h"
+#include "includes/Animal.h"
 
 int Tile::getConsumableAmount() const {
     // You can consume up to the current amount, up to a certain limit per turn if needed

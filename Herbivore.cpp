@@ -1,8 +1,8 @@
-#include "Herbivore.h"
-#include "World.h"
-#include "Carnivore.h"
-#include "Omnivore.h"
-#include "Tile.h"
+#include "includes/Herbivore.h"
+#include "includes/World.h"
+#include "includes/Carnivore.h"
+#include "includes/Omnivore.h"
+#include "includes/Tile.h"
 
 // --- Balancing Constants ---
 const int HERBIVORE_BASE_HP = 30; // Renamed from HERBIVORE_HP for clarity

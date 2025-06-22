@@ -1,7 +1,7 @@
-#include "Omnivore.h"
-#include "World.h"
-#include "Herbivore.h"
-#include "Carnivore.h"
+#include "includes/Omnivore.h"
+#include "includes/World.h"
+#include "includes/Herbivore.h"
+#include "includes/Carnivore.h"
 
 // --- Balancing Constants ---
 const int OMNIVORE_BASE_HP = 60;

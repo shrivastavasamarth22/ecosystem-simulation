@@ -1,5 +1,5 @@
-#include "Animal.h"
-#include "World.h" // Still needed for movement function calls
+#include "includes/Animal.h"
+#include "includes/World.h" // Still needed for movement function calls
 #include <random>
 #include <cmath>
 #include <algorithm> // For std::min/max
