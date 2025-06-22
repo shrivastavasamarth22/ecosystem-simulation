@@ -1,11 +1,11 @@
 #include "includes/SimulationSystems.h"
 #include "includes/AnimalConfig.h" // Need constants
 #include "includes/World.h"
+#include "includes/Random.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
 
-extern std::mt19937 rng;
 namespace MetabolismSystem {
     // Helper function to apply damage directly to entity data
     void applyDamage(EntityManager& data, size_t entity_id, int amount) {

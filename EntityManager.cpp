@@ -1,5 +1,12 @@
 #include "includes/EntityManager.h"
 #include "includes/AnimalConfig.h"
+#include "includes/AnimalTypes.h" // Needed for AnimalType enum used in createEntity
+#include "includes/Random.h"
+#include <algorithm>
+#include <cmath> // For std::abs in destroyEntity (if used there, not currently)
+#include <random> // <-- Include random for the definition
+#include <vector> // Needed for vector operations
+
 
 EntityManager::EntityManager() : num_entities(0) {}
 

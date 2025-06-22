@@ -3,14 +3,12 @@
 #include "includes/Tile.h"
 #include "includes/SimulationSystems.h"
 #include "includes/AnimalConfig.h"
+#include "includes/Random.h"
+
 #include <iostream>
 #include <vector>
 #include <random>
 #include <algorithm>
-
-extern std::mt19937 rng;
-
-
 
 World::World(int w, int h, int cell_size)
     : width(w), height(h), turn_count(0),
