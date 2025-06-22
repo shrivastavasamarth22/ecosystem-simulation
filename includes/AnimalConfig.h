@@ -40,6 +40,9 @@ const int CARNIVORE_PRIME_AGE = 25;
 const int CARNIVORE_PENALTY_PER_YEAR = 1;
 const int CARNIVORE_MINIMUM_VALUE = 15;
 
+// New: Territorial behavior
+const int CARNIVORE_TERRITORIAL_RADIUS = 3; // <-- NEW: Radius to detect rival Carnivores
+
 // --- OMNIVORE CONSTANTS ---
 const int OMNIVORE_BASE_HP = 60;
 const int OMNIVORE_BASE_DMG = 15;
