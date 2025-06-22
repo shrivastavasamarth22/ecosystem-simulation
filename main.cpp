@@ -14,7 +14,7 @@ int main() {
     // Omnivores are versatile but need numbers to be effective hunters.
     const int INITIAL_OMNIVORES = 15;
     // Carnivores are powerful but few in number, as they require a lot of food.
-    const int INITIAL_CARNIVORES = 5;
+    const int INITIAL_CARNIVORES = 8;
 
     // Controls the speed of the simulation (milliseconds per turn).
     const int SIMULATION_SPEED_MS = 500;

@@ -25,7 +25,7 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
             // Assign Grass resource to most tiles
-            if (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < 0.9f) { // 90% chance of grass
+            if (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < 0.35) { // 40% chance of grass
                  grid[r][c] = Tile(&RESOURCE_GRASS, dist_resource_amount(rng));
             } else {
                  grid[r][c] = Tile(); // Empty tile

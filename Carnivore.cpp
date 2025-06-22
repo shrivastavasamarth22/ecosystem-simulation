@@ -13,7 +13,7 @@ const int CARNIVORE_STARTING_ENERGY = 70;
 const int CARNIVORE_REPRODUCE_ENERGY_COST = 35;
 
 // New/Adjusted constants for reproduction
-const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.75f; // << NEW: Need 75% of max energy
+const float CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.70f; // << NEW: Need 70% of max energy
 const int CARNIVORE_MIN_REPRODUCE_AGE = 10;                // Age requirement
 
 

@@ -11,7 +11,8 @@ enum class AIState {
     FLEEING,
     CHASING,
     PACK_HUNTING,
-    HERDING
+    HERDING,
+    SEEKING_FOOD,
 };
 
 class Animal {
@@ -44,8 +45,17 @@ class Animal {
         AIState current_state;
         Animal* target;
 
+        // --- NEW: For targeting coordinates (resources, herd center, etc.) ---
+        int target_x;
+        int target_y;
+
         // --- NEW for aging ---
         virtual void applyAgingPenalties(); // Called in postTurnUpdate
+
+        // --- NEW Resource Consumption Function ---
+        // Tries to consume resource from the current tile.
+        // Returns the actual energy gained.
+        int tryConsumeResource(World& world, int amount_requested);
 
     public:
         // Constructor updated for max_energy and base stats
@@ -64,8 +74,8 @@ class Animal {
         bool isDead() const;
         void kill();
         
-        void moveTowards(const World& world, int target_x, int target_y);
-        void moveAwayFrom(const World& world, int target_x, int target_y);
+        void moveTowards(const World& world, int target_x_coord, int target_y_coord); // Renamed params to avoid confusion
+    void moveAwayFrom(const World& world, int target_x_coord, int target_y_coord); // Renamed params
         void moveRandom(const World& world);
         
         virtual std::unique_ptr<Animal> reproduce() = 0;
