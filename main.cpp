@@ -14,10 +14,10 @@ int main() {
     // Omnivores are versatile but need numbers to be effective hunters.
     const int INITIAL_OMNIVORES = 15;
     // Carnivores are powerful but few in number, as they require a lot of food.
-    const int INITIAL_CARNIVORES = 8;
+    const int INITIAL_CARNIVORES = 5;
 
     // Controls the speed of the simulation (milliseconds per turn).
-    const int SIMULATION_SPEED_MS = 500;
+    const int SIMULATION_SPEED_MS = 350;
     const int MAX_TURNS = 2000; // A higher turn limit for the more complex simulation.
 
     const int SPATIAL_GRID_CELL_SIZE = 15; // Tunable: Should be ~2x average sight radius

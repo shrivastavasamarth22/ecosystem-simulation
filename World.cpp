@@ -29,7 +29,7 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
     std::uniform_int_distribution<int> dist_resource_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
-            if (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < 0.35f) { // Using your 35% chance
+            if (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < 0.5f) { // 50% chance
                  grid[r][c] = Tile(&RESOURCE_GRASS, dist_resource_amount(rng));
             } else {
                  grid[r][c] = Tile();

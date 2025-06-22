@@ -12,7 +12,7 @@ TARGET = simulation
 
 # A list of all the source code files (.cpp) in the project.
 # The make utility will automatically find the corresponding .h files.
-SOURCES = main.cpp World.cpp EntityManager.cpp SimulationSystems.cpp Resource.cpp Tile.cpp
+SOURCES = main.cpp World.cpp EntityManager.cpp SimulationSystems.cpp Resource.cpp Tile.cpp Random.cpp
 
 # This line automatically creates a list of object files (.o) from the source files.
 # e.g., "main.cpp" becomes "main.o".
