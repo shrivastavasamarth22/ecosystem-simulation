@@ -44,6 +44,7 @@ class World {
 
     int getWidth() const { return width; }
     int getHeight() const { return height; }
+    int getTurnCount() const { return turn_count; }
 
     // This function signature is now broken because it returns Animal*.
     // We will comment it out and replace it with a new version later.
