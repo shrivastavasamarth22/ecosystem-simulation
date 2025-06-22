@@ -26,13 +26,19 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
     m_entityManager.clear(); // Ensure the entity manager is empty
 
     // --- Initialize Resources on the Grid (no changes here) ---
-    std::uniform_int_distribution<int> dist_resource_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
+     std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
+    std::uniform_int_distribution<int> dist_grass_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
+    std::uniform_int_distribution<int> dist_berry_amount(RESOURCE_BERRIES.max_amount / 2, RESOURCE_BERRIES.max_amount);
+
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
-            if (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng) < 0.5f) { // 50% chance
-                 grid[r][c] = Tile(&RESOURCE_GRASS, dist_resource_amount(rng));
-            } else {
-                 grid[r][c] = Tile();
+            float chance = dist_chance(rng);
+            if (chance < 0.1f) { // 10% chance for Berries
+                    grid[r][c] = Tile(&RESOURCE_BERRIES, dist_berry_amount(rng));
+            } else if (chance < 0.5f) { // 40% chance for Grass
+                    grid[r][c] = Tile(&RESOURCE_GRASS, dist_grass_amount(rng));
+            } else { // 50% chance for empty
+                    grid[r][c] = Tile();
             }
         }
     }
