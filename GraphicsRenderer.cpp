@@ -11,6 +11,11 @@ const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "empty_tile.png";
 const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "grass_tile.png";
 const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "berry_tile.png"; 
 
+// --- Animal Texture Paths ---
+const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "herbivore.png";
+const std::string CARNIVORE_TEXTURE_PATH = ASSETS_PATH + "carnivore.png";
+const std::string OMNIVORE_TEXTURE_PATH = ASSETS_PATH + "omnivore.png";
+
 // Backround music file path
 const std::string BACKGROUND_MUSIC_PATH = ASSETS_PATH + "background_music.mp3";
 
@@ -44,10 +49,18 @@ void GraphicsRenderer::init(int world_width, int world_height, int tile_size, co
          std::cerr << "Error loading berry texture: " << BERRY_TILE_TEXTURE_PATH << std::endl;
     }
 
-    // Texture loading for animals and font will go here in later phases.
+    // --- Load Animal Textures ---
+    if (!m_animal_textures[AnimalType::HERBIVORE].loadFromFile(HERBIVORE_TEXTURE_PATH)) {
+        std::cerr << "Error loading herbivore texture: " << HERBIVORE_TEXTURE_PATH << std::endl;
+    }
+    if (!m_animal_textures[AnimalType::CARNIVORE].loadFromFile(CARNIVORE_TEXTURE_PATH)) {
+        std::cerr << "Error loading carnivore texture: " << CARNIVORE_TEXTURE_PATH << std::endl;
+    }
+    if (!m_animal_textures[AnimalType::OMNIVORE].loadFromFile(OMNIVORE_TEXTURE_PATH)) {
+        std::cerr << "Error loading omnivore texture: " << OMNIVORE_TEXTURE_PATH << std::endl;
+    }
 
-
-    // --- NEW: Load and Play Background Music ---
+    // --- Load and Play Background Music ---
     // Open the music file
     if (!m_background_music.openFromFile(BACKGROUND_MUSIC_PATH)) {
         std::cerr << "Error loading background music: " << BACKGROUND_MUSIC_PATH << std::endl;
@@ -86,7 +99,7 @@ void GraphicsRenderer::display() {
 }
 
 // --- NEW: drawWorld Implementation ---
-    void GraphicsRenderer::drawWorld(const World& world) {
+void GraphicsRenderer::drawWorld(const World& world) {
     // Iterate through each tile in the world grid
     for (int y = 0; y < world.getHeight(); ++y) {
         for (int x = 0; x < world.getWidth(); ++x) {
@@ -124,4 +137,41 @@ void GraphicsRenderer::display() {
             m_window.draw(tile_sprite);
         }
     }
+}
+
+// --- NEW: drawEntities Implementation ---
+void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
+    size_t num_entities = entityManager.getEntityCount();
+
+    for (size_t i = 0; i < num_entities; ++i) {
+        // --- This check prevents drawing dead entities ---
+        if (!entityManager.is_alive[i]) {
+             continue; // Skip to the next entity if this one is not alive
+        }
+
+        AnimalType entity_type = entityManager.type[i];
+
+        // Find the correct animal texture
+        auto it = m_animal_textures.find(entity_type);
+        if (it != m_animal_textures.end()) {
+            sf::Sprite entity_sprite;
+            entity_sprite.setTexture(it->second);
+
+            // Set position based on entity's world coordinates
+            entity_sprite.setPosition(entityManager.x[i] * m_tile_size, entityManager.y[i] * m_tile_size);
+
+            // Apply scaling
+            sf::Vector2u texture_size = entity_sprite.getTexture()->getSize();
+            entity_sprite.setScale(
+                static_cast<float>(m_tile_size) / texture_size.x,
+                static_cast<float>(m_tile_size) / texture_size.y
+            );
+
+            // Draw the entity sprite
+            m_window.draw(entity_sprite);
+
+        } else {
+            std::cerr << "Warning: No texture mapped for animal type: " << static_cast<int>(entity_type) << std::endl;
+        }
     }
+}

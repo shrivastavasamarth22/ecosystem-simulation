@@ -8,6 +8,7 @@
 #include "World.h" // Needs World definition for draw functions later
 #include "EntityManager.h" // Needs EntityManager definition for draw functions later
 #include "Resource.h" // Needs Resource definition for draw functions later
+#include "AnimalTypes.h"
 
 class GraphicsRenderer {
     public:
@@ -31,7 +32,7 @@ class GraphicsRenderer {
 
     // --- Drawing Methods (Implemented in later phases) ---
     void drawWorld(const World& world); // Phase 2
-    // void drawEntities(const EntityManager& entityManager); // Phase 3
+    void drawEntities(const EntityManager& entityManager); // Phase 3
     // void drawUI(const World& world); // Phase 5
 
     private:
@@ -45,7 +46,7 @@ class GraphicsRenderer {
 
 
     // Add animal textures/font here in later phases
-    // std::map<AnimalType, sf::Texture> m_animal_textures; // Phase 3
+    std::map<AnimalType, sf::Texture> m_animal_textures; // Phase 3
     // sf::Font m_font; // Phase 5
 
     sf::Music m_background_music; // Background music for the game

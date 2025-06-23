@@ -33,11 +33,11 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
             float chance = dist_chance(rng);
-            if (chance < 0.05f) { // 5% chance for Berries
+            if (chance < 0.03f) { // 3% chance for Berries
                     grid[r][c] = Tile(&RESOURCE_BERRIES, dist_berry_amount(rng));
-            } else if (chance < 0.45f) { // 45% chance for Grass
+            } else if (chance < 0.17f) { // 17% chance for Grass
                     grid[r][c] = Tile(&RESOURCE_GRASS, dist_grass_amount(rng));
-            } else { // 50% chance for empty
+            } else { // 80% chance for empty
                     grid[r][c] = Tile();
             }
         }

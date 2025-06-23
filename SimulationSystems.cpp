@@ -87,6 +87,11 @@ namespace MovementSystem {
     void moveTowards(EntityManager& data, size_t entity_id, const World& world, int target_x_coord, int target_y_coord) {
         if (!data.is_alive[entity_id]) return;
 
+        // --- NEW: Check if already at target ---
+        if (data.x[entity_id] == target_x_coord && data.y[entity_id] == target_y_coord) {
+            return; // Already at the target coordinates, no movement needed.
+        }
+
         for (int i = 0; i < data.current_speed[entity_id]; ++i) {
             int dx = target_x_coord - data.x[entity_id];
             int dy = target_y_coord - data.y[entity_id];
@@ -94,23 +99,33 @@ namespace MovementSystem {
             int move_dx = 0;
             int move_dy = 0;
 
+            // Determine direction of movement (favoring the axis with greater distance)
             if (std::abs(dx) > std::abs(dy)) {
                 move_dx = (dx > 0) ? 1 : -1;
-            } else if (dy != 0) {
+            } else if (dy != 0) { // Only consider dy if it's non-zero
                 move_dy = (dy > 0) ? 1 : -1;
-            } else if (dx != 0) {
-                 move_dx = (dx > 0) ? 1 : -1;
+            } else if (dx != 0) { // Only consider dx if dy is zero and dx is non-zero
+                move_dx = (dx > 0) ? 1 : -1;
             }
+            // Note: If dx == 0 and dy == 0, move_dx and move_dy remain 0.
+            // The check above already handles this case by returning early,
+            // but the logic here is still correct.
 
             int new_x = data.x[entity_id] + move_dx;
             int new_y = data.y[entity_id] + move_dy;
 
             // Check world boundaries before updating position
+            // If the move takes the entity out of bounds, it stays at the edge.
             if (new_x >= 0 && new_x < world.getWidth()) {
                 data.x[entity_id] = new_x;
             }
             if (new_y >= 0 && new_y < world.getHeight()) {
                 data.y[entity_id] = new_y;
+            }
+
+            // If we reached the target *during* this speed step, we can stop early
+            if (data.x[entity_id] == target_x_coord && data.y[entity_id] == target_y_coord) {
+                break; // Stop moving for this turn if target reached
             }
         }
     }
@@ -119,9 +134,18 @@ namespace MovementSystem {
     void moveAwayFrom(EntityManager& data, size_t entity_id, const World& world, int target_x_coord, int target_y_coord) {
         if (!data.is_alive[entity_id]) return;
 
+        // --- NEW: Check if already at target (less common for fleeing, but possible/safe) ---
+        if (data.x[entity_id] == target_x_coord && data.y[entity_id] == target_y_coord) {
+            // If trying to move away from the exact spot they are on, maybe just move randomly?
+            // Or define a default "away" direction? For simplicity, let's just move randomly.
+            moveRandom(data, entity_id, world);
+            return;
+        }
+
+
         for (int i = 0; i < data.current_speed[entity_id]; ++i) {
-            int dx = data.x[entity_id] - target_x_coord;
-            int dy = data.y[entity_id] - target_y_coord;
+            int dx = data.x[entity_id] - target_x_coord; // Direction *away* from target
+            int dy = data.y[entity_id] - target_y_coord; // Direction *away* from target
 
             int move_dx = 0;
             int move_dy = 0;
@@ -138,12 +162,13 @@ namespace MovementSystem {
             int new_y = data.y[entity_id] + move_dy;
 
             // Check world boundaries before updating position
-            if (new_x >= 0 && new_x < world.getWidth()) {
+             if (new_x >= 0 && new_x < world.getWidth()) {
                 data.x[entity_id] = new_x;
             }
             if (new_y >= 0 && new_y < world.getHeight()) {
                 data.y[entity_id] = new_y;
             }
+             // Note: No early exit if moving away, they just move the full speed.
         }
     }
 
