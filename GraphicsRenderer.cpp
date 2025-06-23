@@ -4,6 +4,7 @@
 #include "includes/Tile.h"
 #include "includes/EntityManager.h"
 #include <iostream>
+#include <sstream>
 
 // Define texture file paths
 const std::string ASSETS_PATH = "assets/";
@@ -15,6 +16,9 @@ const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "berry_tile.png";
 const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "herbivore.png";
 const std::string CARNIVORE_TEXTURE_PATH = ASSETS_PATH + "carnivore.png";
 const std::string OMNIVORE_TEXTURE_PATH = ASSETS_PATH + "omnivore.png";
+
+// --- Font File Path ---
+const std::string FONT_PATH = ASSETS_PATH + "daydream.ttf";
 
 // Backround music file path
 const std::string BACKGROUND_MUSIC_PATH = ASSETS_PATH + "background_music.mp3";
@@ -58,6 +62,11 @@ void GraphicsRenderer::init(int world_width, int world_height, int tile_size, co
     }
     if (!m_animal_textures[AnimalType::OMNIVORE].loadFromFile(OMNIVORE_TEXTURE_PATH)) {
         std::cerr << "Error loading omnivore texture: " << OMNIVORE_TEXTURE_PATH << std::endl;
+    }
+
+     if (!m_font.loadFromFile(FONT_PATH)) {
+        std::cerr << "Error loading font: " << FONT_PATH << std::endl;
+        // The program can still run without a font, text won't be displayed.
     }
 
     // --- Load and Play Background Music ---
@@ -139,7 +148,7 @@ void GraphicsRenderer::drawWorld(const World& world) {
     }
 }
 
-// --- NEW: drawEntities Implementation ---
+// --- drawEntities Implementation ---
 void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
     size_t num_entities = entityManager.getEntityCount();
 
@@ -174,4 +183,50 @@ void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
             std::cerr << "Warning: No texture mapped for animal type: " << static_cast<int>(entity_type) << std::endl;
         }
     }
+}
+
+void GraphicsRenderer::drawUI(const World& world) {
+    // Check if font is loaded successfully
+    if (m_font.getInfo().family.empty()) {
+        return; // Exit if font is not loaded
+    }
+
+    // Get counts from World/EntityManager
+    const EntityManager& data = world.getEntityManager();
+    size_t num_entities = data.getEntityCount();
+
+    int herbivore_count = 0;
+    int carnivore_count = 0;
+    int omnivore_count = 0;
+
+    // Iterate through entities to count living ones
+    for (size_t i = 0; i < num_entities; ++i) {
+        if (data.is_alive[i]) {
+            switch (data.type[i]) {
+                case AnimalType::HERBIVORE: herbivore_count++; break;
+                case AnimalType::CARNIVORE: carnivore_count++; break;
+                case AnimalType::OMNIVORE:  omnivore_count++; break;
+                default: break;
+            }
+        }
+    }
+
+    // Create text string using stringstream
+    std::stringstream ss;
+    ss << "Turn: " << world.getTurnCount()
+    << " H: " << herbivore_count
+    << " C: " << carnivore_count
+    << " O: " << omnivore_count
+    << " Total: " << num_entities; // Total entities in the manager (living + dead before cleanup)
+
+    // Create SFML Text object
+    sf::Text stats_text;
+    stats_text.setFont(m_font); // Set the font
+    stats_text.setString(ss.str()); // Set the text content
+    stats_text.setCharacterSize(8); // Set the character size (in pixels)
+    stats_text.setFillColor(sf::Color::White); // Set the color
+    stats_text.setPosition(10, 10); // Set the position (e.g., top-left corner)
+
+    // Draw the text
+    m_window.draw(stats_text);
 }

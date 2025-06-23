@@ -15,7 +15,7 @@ int main() {
     const int WORLD_HEIGHT = 25;
     const int SPATIAL_GRID_CELL_SIZE = 15;
     const int INITIAL_HERBIVORES = 25;
-    const int INITIAL_OMNIVORES = 15;
+    const int INITIAL_OMNIVORES = 10;
     const int INITIAL_CARNIVORES = 8;
     const int SIMULATION_SPEED_MS = 500;
     const int MAX_TURNS = 2000;
@@ -78,8 +78,9 @@ int main() {
         renderer.drawWorld(world); // <-- Call the new drawing function
 
         // Draw entities and UI here in later phases
-        renderer.drawEntities(world.getEntityManager()); // Phase 3
-        // renderer.drawUI(world); // Phase 5
+        renderer.drawEntities(world.getEntityManager());
+        
+        renderer.drawUI(world);
 
         renderer.display(); // Display the drawn frame
 
