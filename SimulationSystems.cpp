@@ -87,7 +87,7 @@ namespace MovementSystem {
     void moveTowards(EntityManager& data, size_t entity_id, const World& world, int target_x_coord, int target_y_coord) {
         if (!data.is_alive[entity_id]) return;
 
-        // --- NEW: Check if already at target ---
+        // Check if already at target
         if (data.x[entity_id] == target_x_coord && data.y[entity_id] == target_y_coord) {
             return; // Already at the target coordinates, no movement needed.
         }
@@ -99,23 +99,21 @@ namespace MovementSystem {
             int move_dx = 0;
             int move_dy = 0;
 
-            // Determine direction of movement (favoring the axis with greater distance)
-            if (std::abs(dx) > std::abs(dy)) {
-                move_dx = (dx > 0) ? 1 : -1;
-            } else if (dy != 0) { // Only consider dy if it's non-zero
-                move_dy = (dy > 0) ? 1 : -1;
-            } else if (dx != 0) { // Only consider dx if dy is zero and dx is non-zero
+            // --- REVISED DIAGONAL MOVEMENT LOGIC ---
+            // Move horizontally if there's a horizontal distance to cover
+            if (dx != 0) {
                 move_dx = (dx > 0) ? 1 : -1;
             }
-            // Note: If dx == 0 and dy == 0, move_dx and move_dy remain 0.
-            // The check above already handles this case by returning early,
-            // but the logic here is still correct.
+            // Move vertically if there's a vertical distance to cover
+            if (dy != 0) {
+                move_dy = (dy > 0) ? 1 : -1;
+            }
+            // This allows for simultaneous movement in both x and y (diagonal).
 
             int new_x = data.x[entity_id] + move_dx;
             int new_y = data.y[entity_id] + move_dy;
 
             // Check world boundaries before updating position
-            // If the move takes the entity out of bounds, it stays at the edge.
             if (new_x >= 0 && new_x < world.getWidth()) {
                 data.x[entity_id] = new_x;
             }
@@ -134,14 +132,11 @@ namespace MovementSystem {
     void moveAwayFrom(EntityManager& data, size_t entity_id, const World& world, int target_x_coord, int target_y_coord) {
         if (!data.is_alive[entity_id]) return;
 
-        // --- NEW: Check if already at target (less common for fleeing, but possible/safe) ---
+        // If trying to move away from the exact spot they are on, move randomly.
         if (data.x[entity_id] == target_x_coord && data.y[entity_id] == target_y_coord) {
-            // If trying to move away from the exact spot they are on, maybe just move randomly?
-            // Or define a default "away" direction? For simplicity, let's just move randomly.
             moveRandom(data, entity_id, world);
             return;
         }
-
 
         for (int i = 0; i < data.current_speed[entity_id]; ++i) {
             int dx = data.x[entity_id] - target_x_coord; // Direction *away* from target
@@ -150,12 +145,23 @@ namespace MovementSystem {
             int move_dx = 0;
             int move_dy = 0;
 
-            if (std::abs(dx) > std::abs(dy)) {
+            // --- REVISED DIAGONAL MOVEMENT LOGIC ---
+            if (dx != 0) {
                 move_dx = (dx > 0) ? 1 : -1;
-            } else if (dy != 0) {
+            }
+            if (dy != 0) {
                 move_dy = (dy > 0) ? 1 : -1;
-            } else if (dx != 0) {
-                move_dx = (dx > 0) ? 1 : -1;
+            }
+
+            // If for some reason dx/dy calculation results in no move (e.g. target is far but aligned),
+            // this could stall. A random nudge can help, but the current logic should prevent this.
+            // As a fallback, if no move is calculated, nudge randomly.
+            if (move_dx == 0 && move_dy == 0) {
+                if (rng() % 2 == 0) {
+                    move_dx = (rng() % 2 == 0) ? 1 : -1;
+                } else {
+                    move_dy = (rng() % 2 == 0) ? 1 : -1;
+                }
             }
 
             int new_x = data.x[entity_id] + move_dx;
@@ -168,7 +174,6 @@ namespace MovementSystem {
             if (new_y >= 0 && new_y < world.getHeight()) {
                 data.y[entity_id] = new_y;
             }
-             // Note: No early exit if moving away, they just move the full speed.
         }
     }
 
@@ -195,7 +200,7 @@ namespace MovementSystem {
 
         // --- Parallelize the loop using OpenMP ---
         // Each thread processes a chunk of entities.
-        // Reads (data.state, data.target_id, data.target_x, data.target_y, target's position) are safe.
+        // Reads (data.state, data.target_id, etc.) are safe.
         // Writes (data.x[i], data.y[i]) must ONLY be to the current entity 'i'. This is true for movement.
         #pragma omp parallel for
         for (size_t i = 0; i < num_entities; ++i) {
@@ -211,8 +216,6 @@ namespace MovementSystem {
                  {
                      size_t target_entity_id = data.target_id[i];
                      // Check if target is valid and alive.
-                     // If not, the AI System should have set the state away from targeting an animal.
-                     // But for robustness, handle invalid target:
                      if (target_entity_id != (size_t)-1 && target_entity_id < data.getEntityCount() && data.is_alive[target_entity_id]) {
                          int target_x = data.x[target_entity_id];
                          int target_y = data.y[target_entity_id];
@@ -234,18 +237,11 @@ namespace MovementSystem {
                      int target_x_coord = data.target_x[i];
                      int target_y_coord = data.target_y[i];
 
-                     // Check if coordinate target is valid (-1 means invalid/no target).
-                     // If not, the AI System should have set the state away from seeking coordinates.
-                     // But for robustness, handle invalid target:
+                     // Check if coordinate target is valid.
                      if (target_x_coord != -1 && target_y_coord != -1) {
-                         // If we reached the target tile, the AI System should have changed state.
-                         // For robustness, if state is SEEKING_FOOD but already on the tile, don't move towards it.
-                         if (data.x[i] != target_x_coord || data.y[i] != target_y_coord) { // Only move if not already there
+                         // Only move if not already there
+                         if (data.x[i] != target_x_coord || data.y[i] != target_y_coord) {
                               moveTowards(data, i, world, target_x_coord, target_y_coord);
-                         } else {
-                              // Already on tile, default to random movement (or no movement?)
-                              // Let's default to random movement if AI hasn't switched state.
-                              moveRandom(data, i, world);
                          }
                      } else {
                          // Target coordinates invalid - default to random movement. AI should fix state next turn.
@@ -524,21 +520,24 @@ namespace ActionSystem {
                 // --- Passive Resource Consumption ---
                 if (current_state != AIState::FLEEING && data.energy[i] < data.max_energy[i]) {
                     Tile& current_tile = world.getTile(data.x[i], data.y[i]);
+
+                    // State Change Logic: If we were seeking food and have arrived, stop seeking.
+                    // This MUST happen before consumption logic to prevent getting stuck.
+                    if (current_state == AIState::SEEKING_FOOD &&
+                        data.target_x[i] != -1 && data.target_y[i] != -1 &&
+                        data.x[i] == data.target_x[i] && data.y[i] == data.target_y[i])
+                    {
+                        data.state[i] = AIState::WANDERING;
+                        data.target_x[i] = -1; data.target_y[i] = -1;
+                        data.target_id[i] = (size_t)-1;
+                    }
+
+                    // Now, attempt to consume from the current tile
                     if (current_tile.resource_type && current_tile.resource_amount > 0) {
                         const int RESOURCE_CONSUMPTION_AMOUNT_REQUESTED = 5;
                         int amount_consumed = current_tile.consume(RESOURCE_CONSUMPTION_AMOUNT_REQUESTED);
                         int energy_gained = amount_consumed * current_tile.resource_type->nutritional_value;
                         data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
-
-                        // State Change Logic (if SEEKING_FOOD and reached target TILE and ate)
-                        if (current_state == AIState::SEEKING_FOOD && energy_gained > 0 &&
-                            data.target_x[i] != -1 && data.target_y[i] != -1 &&
-                            data.x[i] == data.target_x[i] && data.y[i] == data.target_y[i])
-                        {
-                            data.state[i] = AIState::WANDERING;
-                            data.target_x[i] = -1; data.target_y[i] = -1;
-                            data.target_id[i] = (size_t)-1;
-                        }
                     }
                 }
                 // --- End Passive Consumption ---

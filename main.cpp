@@ -37,55 +37,52 @@ int main() {
     sf::Time timePerUpdate = sf::milliseconds(SIMULATION_SPEED_MS);
     bool is_paused = false; // <-- Pause state flag
     bool was_p_pressed_last_frame = false; // <-- To detect rising edge of P key
+    bool simulation_ended = false; // <-- Flag to indicate if the simulation has ended
 
 
     std::cout << "Starting Intelligent Agent Simulation..." << std::endl;
 
     // --- Main SFML Window Loop ---
     while (renderer.isOpen()) {
-        // Handle window events (closing) - handleEvents no longer needs to process pause
+        // Handle window events (closing)
         renderer.handleEvents();
 
-        // --- Handle Pause Input (Polling) ---
+        // --- Handle Pause Input ---
         bool is_p_currently_pressed = sf::Keyboard::isKeyPressed(sf::Keyboard::P);
         if (is_p_currently_pressed && !was_p_pressed_last_frame) {
             is_paused = !is_paused; // Toggle pause state
-            // Optional: Print pause state to console
             if (is_paused) { std::cout << "Simulation Paused." << std::endl; }
             else { std::cout << "Simulation Resumed." << std::endl; }
         }
         was_p_pressed_last_frame = is_p_currently_pressed;
 
 
-        // Update simulation based on elapsed time ONLY if NOT paused
+        // --- Simulation Update Loop (Fixed Timestep) ---
         timeSinceLastUpdate += simulationClock.restart();
         while (timeSinceLastUpdate > timePerUpdate) {
             timeSinceLastUpdate -= timePerUpdate;
 
-            // --- Run one simulation turn ONLY if NOT paused ---
-                if (!is_paused && !world.isEcosystemCollapsed() && world.getEntityManager().getEntityCount() > 0 && world.getEntityManager().is_alive.size() > 0 )
-                {
-                    world.update();
-                }
+            // Only run the update if the simulation is not paused and has not ended.
+            if (!is_paused && !simulation_ended)
+            {
+                world.update();
 
-            // Check for end conditions
-            if (world.isEcosystemCollapsed() || world.getEntityManager().getEntityCount() == 0) {
-                std::cout << "Ecosystem collapsed or empty. Simulation finished." << std::endl;
-                break; // Exit the simulation update loop
-            }
-                if (world.getTurnCount() >= MAX_TURNS) {
+                // Check for end conditions AFTER the update
+                if (world.isEcosystemCollapsed() || world.getEntityManager().getEntityCount() == 0) {
+                    std::cout << "Ecosystem collapsed or empty. Simulation finished." << std::endl;
+                    simulation_ended = true;
+                } else if (world.getTurnCount() >= MAX_TURNS) {
                     std::cout << "Simulation reached max turns. Finished." << std::endl;
-                    break; // Exit the simulation update loop
+                    simulation_ended = true;
                 }
-
-        } // End while (timeSinceLastUpdate > timePerUpdate)
+            }
+        }
 
         // --- Drawing Phase ---
-        renderer.clear(sf::Color(100, 149, 237));
+        renderer.clear(sf::Color(100, 149, 237)); // Cornflower Blue
 
         renderer.drawWorld(world);
         renderer.drawEntities(world.getEntityManager());
-        // --- MODIFIED: Pass pause state to drawUI ---
         renderer.drawUI(world, is_paused);
 
         renderer.display();
