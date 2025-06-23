@@ -35,8 +35,8 @@ int main() {
     sf::Clock simulationClock;
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
     sf::Time timePerUpdate = sf::milliseconds(SIMULATION_SPEED_MS);
-    bool is_paused = false; // <-- NEW: Pause state flag
-    bool was_p_pressed_last_frame = false; // <-- NEW: To detect rising edge of P key
+    bool is_paused = false; // <-- Pause state flag
+    bool was_p_pressed_last_frame = false; // <-- To detect rising edge of P key
 
 
     std::cout << "Starting Intelligent Agent Simulation..." << std::endl;
@@ -46,7 +46,7 @@ int main() {
         // Handle window events (closing) - handleEvents no longer needs to process pause
         renderer.handleEvents();
 
-        // --- NEW: Handle Pause Input (Polling) ---
+        // --- Handle Pause Input (Polling) ---
         bool is_p_currently_pressed = sf::Keyboard::isKeyPressed(sf::Keyboard::P);
         if (is_p_currently_pressed && !was_p_pressed_last_frame) {
             is_paused = !is_paused; // Toggle pause state

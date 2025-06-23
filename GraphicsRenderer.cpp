@@ -101,9 +101,6 @@ void GraphicsRenderer::handleEvents() {
                 m_window.close();
             }
             // We will handle pause/unpause in main.cpp as it controls the simulation state.
-            // You could add a public method here like 'bool isKeyPressed(sf::Keyboard::Key key) const;'
-            // or pass a reference to a state object controlled by main.
-            // For this simple pause, we'll poll key state directly in main.
         }
     }
 }
@@ -144,7 +141,7 @@ void GraphicsRenderer::drawWorld(const World& world) {
             // Set the position of the sprite (world grid coords -> screen pixel coords)
             tile_sprite.setPosition(x * m_tile_size, y * m_tile_size);
 
-            // Optionally scale the sprite if the texture size doesn't match tile_size
+            // Scale the sprite if the texture size doesn't match tile_size
             sf::Vector2u texture_size = tile_sprite.getTexture()->getSize();
             tile_sprite.setScale(
                 static_cast<float>(m_tile_size) / texture_size.x,
@@ -201,7 +198,7 @@ void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
     m_window.setView(ui_view); // Apply this view for drawing UI
 
     if (m_font.getInfo().family.empty()) {
-        // Optionally restore the previous view here if you had one
+        // Optionally restore the previous view here if we had one
         // m_window.setView(m_world_view); // e.g.
         return;
     }
@@ -245,8 +242,5 @@ void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
 
     // --- Restore Previous View ---
     // After drawing UI, restore the view that was active before this function was called.
-    // In your case, this is the default view that matches the window size, which is also what drawWorld/drawEntities use currently.
-    // This step is crucial if you introduce a separate 'world_view' later.
-    // For now, it effectively just reapplies the same default view, but it's good practice.
     m_window.setView(m_window.getDefaultView());
 }
