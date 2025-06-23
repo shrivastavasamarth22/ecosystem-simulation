@@ -129,10 +129,14 @@ Initial population counts, world size, spatial grid cell size, and simulation sp
     - Major refactor to a Data-Oriented Design. Replaced OOP Animal hierarchy with `EntityManager` (SoA) and System-based logic (`SimulationSystems`). Implemented fast entity destruction and spatial partitioning (`World::spatial_grid`) for performance. Removed `dynamic_cast` dependencies for core logic.
 - **v1.8: Multithreading Implementation**
     - Integrated OpenMP. Parallelized key systems (AI, Movement, Metabolism). Maintained single-threaded execution for thread-sensitive systems (Action, Reproduction, Cleanup) with proper sequencing and synchronization.
-- **v1.9: SFML Visual Overhaul**
+- **v1.9: SFML Visual Overhaul Beginning**
     - Replaced console drawing with a dedicated SFML graphical window.
     - Implemented drawing of the world grid using textures for different tile/resource types.
     - Added background music playback using SFML Audio.
+- **v2.0: SFML Visual Overhaul Complete**
+    - Added animal sprites
+    - Implemented Basic UI stats
+    - Added basic keyboard events as well as play/pause functionality for the sim.
 
 ## License
 
