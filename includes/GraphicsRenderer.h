@@ -3,7 +3,10 @@
 
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <map>
 #include "World.h" // Needs World definition for draw functions later
+#include "EntityManager.h" // Needs EntityManager definition for draw functions later
+#include "Resource.h" // Needs Resource definition for draw functions later
 
 class GraphicsRenderer {
     public:
@@ -26,13 +29,23 @@ class GraphicsRenderer {
     void display();
 
     // --- Drawing Methods (Implemented in later phases) ---
-    // void drawWorld(const World& world); // Phase 2
+    void drawWorld(const World& world); // Phase 2
     // void drawEntities(const EntityManager& entityManager); // Phase 3
     // void drawUI(const World& world); // Phase 5
 
     private:
-    sf::RenderWindow m_window; // The SFML window object
+    sf::RenderWindow m_window;
     int m_tile_size;
+
+    // --- NEW: Textures for Tiles ---
+    sf::Texture m_empty_tile_texture; // Texture for empty tiles
+    // We'll use a map for resource types as it's extensible
+    std::map<const ResourceType*, sf::Texture> m_resource_tile_textures;
+
+
+    // Add animal textures/font here in later phases
+    // std::map<AnimalType, sf::Texture> m_animal_textures; // Phase 3
+    // sf::Font m_font; // Phase 5
 };
 
 #endif // GRAPHICS_RENDERER_H
