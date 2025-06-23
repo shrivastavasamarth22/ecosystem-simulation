@@ -31,63 +31,67 @@ int main() {
     GraphicsRenderer renderer;
     renderer.init(WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE_PIXELS, WINDOW_TITLE);
 
-    // --- Simulation Timing ---
+    // --- Simulation Timing & Control ---
     sf::Clock simulationClock;
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
     sf::Time timePerUpdate = sf::milliseconds(SIMULATION_SPEED_MS);
+    bool is_paused = false; // <-- NEW: Pause state flag
+    bool was_p_pressed_last_frame = false; // <-- NEW: To detect rising edge of P key
 
 
     std::cout << "Starting Intelligent Agent Simulation..." << std::endl;
 
     // --- Main SFML Window Loop ---
     while (renderer.isOpen()) {
-        // Handle window events (closing, input)
+        // Handle window events (closing) - handleEvents no longer needs to process pause
         renderer.handleEvents();
 
-        // Update simulation based on elapsed time
+        // --- NEW: Handle Pause Input (Polling) ---
+        bool is_p_currently_pressed = sf::Keyboard::isKeyPressed(sf::Keyboard::P);
+        if (is_p_currently_pressed && !was_p_pressed_last_frame) {
+            is_paused = !is_paused; // Toggle pause state
+            // Optional: Print pause state to console
+            if (is_paused) { std::cout << "Simulation Paused." << std::endl; }
+            else { std::cout << "Simulation Resumed." << std::endl; }
+        }
+        was_p_pressed_last_frame = is_p_currently_pressed;
+
+
+        // Update simulation based on elapsed time ONLY if NOT paused
         timeSinceLastUpdate += simulationClock.restart();
-        // Use a while loop to catch up if rendering is slow
         while (timeSinceLastUpdate > timePerUpdate) {
             timeSinceLastUpdate -= timePerUpdate;
 
-            // --- Run one simulation turn ---
-             if (!world.isEcosystemCollapsed() && world.getEntityManager().getEntityCount() > 0 && world.getEntityManager().is_alive.size() > 0 )
-             {
-                 world.update();
-             }
+            // --- Run one simulation turn ONLY if NOT paused ---
+                if (!is_paused && !world.isEcosystemCollapsed() && world.getEntityManager().getEntityCount() > 0 && world.getEntityManager().is_alive.size() > 0 )
+                {
+                    world.update();
+                }
 
             // Check for end conditions
             if (world.isEcosystemCollapsed() || world.getEntityManager().getEntityCount() == 0) {
                 std::cout << "Ecosystem collapsed or empty. Simulation finished." << std::endl;
-                // You can choose to close the window automatically or leave it open
-                // renderer.getWindow().close(); // Close the window
                 break; // Exit the simulation update loop
             }
-             if (world.getTurnCount() >= MAX_TURNS) {
-                 std::cout << "Simulation reached max turns. Finished." << std::endl;
-                 // renderer.getWindow().close(); // Close the window
-                 break; // Exit the simulation update loop
-             }
+                if (world.getTurnCount() >= MAX_TURNS) {
+                    std::cout << "Simulation reached max turns. Finished." << std::endl;
+                    break; // Exit the simulation update loop
+                }
 
         } // End while (timeSinceLastUpdate > timePerUpdate)
 
         // --- Drawing Phase ---
-        renderer.clear(sf::Color(100, 149, 237)); // Clear with a sky blue color
+        renderer.clear(sf::Color(100, 149, 237));
 
-        // --- NEW: Draw the world grid ---
-        renderer.drawWorld(world); // <-- Call the new drawing function
-
-        // Draw entities and UI here in later phases
+        renderer.drawWorld(world);
         renderer.drawEntities(world.getEntityManager());
-        
-        renderer.drawUI(world);
+        // --- MODIFIED: Pass pause state to drawUI ---
+        renderer.drawUI(world, is_paused);
 
-        renderer.display(); // Display the drawn frame
+        renderer.display();
 
     } // End while (renderer.isOpen())
 
-
-    // --- Simulation End ---
     std::cout << "SFML Window closed. Exiting simulation." << std::endl;
 
     return 0;

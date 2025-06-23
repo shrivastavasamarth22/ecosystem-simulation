@@ -88,14 +88,23 @@ bool GraphicsRenderer::isOpen() const {
 
 void GraphicsRenderer::handleEvents() {
     sf::Event event;
-    // Process events in a loop
     while (m_window.pollEvent(event)) {
-        // Close window: exit
-        if (event.type == sf::Event::Closed)
+        // --- Basic window closing ---
+        if (event.type == sf::Event::Closed) {
             m_window.close();
+        }
 
-        // Handle keyboard input here later (Phase 6)
-        // if (event.type == sf::Event::KeyPressed) { ... }
+        // --- NEW: Handle Keyboard Input ---
+        if (event.type == sf::Event::KeyPressed) {
+            // Example: Close window on Escape key
+            if (event.key.code == sf::Keyboard::Escape) {
+                m_window.close();
+            }
+            // We will handle pause/unpause in main.cpp as it controls the simulation state.
+            // You could add a public method here like 'bool isKeyPressed(sf::Keyboard::Key key) const;'
+            // or pass a reference to a state object controlled by main.
+            // For this simple pause, we'll poll key state directly in main.
+        }
     }
 }
 
@@ -107,7 +116,7 @@ void GraphicsRenderer::display() {
     m_window.display(); // Display what has been drawn to the window
 }
 
-// --- NEW: drawWorld Implementation ---
+// --- drawWorld Implementation ---
 void GraphicsRenderer::drawWorld(const World& world) {
     // Iterate through each tile in the world grid
     for (int y = 0; y < world.getHeight(); ++y) {
@@ -185,48 +194,59 @@ void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
     }
 }
 
-void GraphicsRenderer::drawUI(const World& world) {
-    // Check if font is loaded successfully
+void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
+    // --- NEW: Set UI View ---
+    // Create a view that maps directly to the current window dimensions (pixel coordinates)
+    sf::View ui_view(sf::FloatRect(0, 0, m_window.getSize().x, m_window.getSize().y));
+    m_window.setView(ui_view); // Apply this view for drawing UI
+
     if (m_font.getInfo().family.empty()) {
-        return; // Exit if font is not loaded
+        // Optionally restore the previous view here if you had one
+        // m_window.setView(m_world_view); // e.g.
+        return;
     }
 
-    // Get counts from World/EntityManager
     const EntityManager& data = world.getEntityManager();
     size_t num_entities = data.getEntityCount();
+    int herbivore_count = 0; int carnivore_count = 0; int omnivore_count = 0;
+    for (size_t i = 0; i < num_entities; ++i) { if (data.is_alive[i]) { switch (data.type[i]) { case AnimalType::HERBIVORE: herbivore_count++; break; case AnimalType::CARNIVORE: carnivore_count++; break; case AnimalType::OMNIVORE:  omnivore_count++; break; default: break; } } }
 
-    int herbivore_count = 0;
-    int carnivore_count = 0;
-    int omnivore_count = 0;
-
-    // Iterate through entities to count living ones
-    for (size_t i = 0; i < num_entities; ++i) {
-        if (data.is_alive[i]) {
-            switch (data.type[i]) {
-                case AnimalType::HERBIVORE: herbivore_count++; break;
-                case AnimalType::CARNIVORE: carnivore_count++; break;
-                case AnimalType::OMNIVORE:  omnivore_count++; break;
-                default: break;
-            }
-        }
-    }
-
-    // Create text string using stringstream
+    // Create text string
     std::stringstream ss;
     ss << "Turn: " << world.getTurnCount()
-    << " H: " << herbivore_count
-    << " C: " << carnivore_count
-    << " O: " << omnivore_count
-    << " Total: " << num_entities; // Total entities in the manager (living + dead before cleanup)
+       << " H: " << herbivore_count
+       << " C: " << carnivore_count
+       << " O: " << omnivore_count
+       << " Total: " << num_entities;
 
-    // Create SFML Text object
+    // Create SFML Text object for stats
     sf::Text stats_text;
-    stats_text.setFont(m_font); // Set the font
-    stats_text.setString(ss.str()); // Set the text content
-    stats_text.setCharacterSize(8); // Set the character size (in pixels)
-    stats_text.setFillColor(sf::Color::White); // Set the color
-    stats_text.setPosition(10, 10); // Set the position (e.g., top-left corner)
-
-    // Draw the text
+    stats_text.setFont(m_font);
+    stats_text.setString(ss.str());
+    stats_text.setCharacterSize(8);
+    stats_text.setFillColor(sf::Color::White);
+    stats_text.setPosition(10, 10); // Position relative to the UI view's top-left (0,0)
     m_window.draw(stats_text);
+
+    // Draw Pause Indicator
+    if (is_paused) {
+        sf::Text pause_text;
+        pause_text.setFont(m_font);
+        pause_text.setString("PAUSED");
+        pause_text.setCharacterSize(18);
+        pause_text.setFillColor(sf::Color::Yellow);
+
+        // Position pause text relative to the UI view's top-right
+        // Get the bounds AFTER setting string and size to get correct width
+        sf::FloatRect text_bounds = pause_text.getGlobalBounds();
+        pause_text.setPosition(m_window.getSize().x - text_bounds.width - 10, 10); // 10 pixels from right edge, 10 from top
+        m_window.draw(pause_text);
+    }
+
+    // --- Restore Previous View ---
+    // After drawing UI, restore the view that was active before this function was called.
+    // In your case, this is the default view that matches the window size, which is also what drawWorld/drawEntities use currently.
+    // This step is crucial if you introduce a separate 'world_view' later.
+    // For now, it effectively just reapplies the same default view, but it's good practice.
+    m_window.setView(m_window.getDefaultView());
 }

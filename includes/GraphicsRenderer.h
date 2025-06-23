@@ -30,11 +30,10 @@ class GraphicsRenderer {
     // Display the contents of the window
     void display();
 
-    // --- Drawing Methods (Implemented in later phases) ---
-    void drawWorld(const World& world); // Phase 2
-    void drawEntities(const EntityManager& entityManager); // Phase 3
-    void drawUI(const World& world); // Phase 5
-
+    // --- Drawing Methods ---
+    void drawWorld(const World& world); 
+    void drawEntities(const EntityManager& entityManager);
+    void drawUI(const World& world, bool is_paused); 
     private:
     sf::RenderWindow m_window;
     int m_tile_size;
@@ -46,9 +45,9 @@ class GraphicsRenderer {
 
 
     // Add animal textures/font here in later phases
-    std::map<AnimalType, sf::Texture> m_animal_textures; // Phase 3
+    std::map<AnimalType, sf::Texture> m_animal_textures;
 
-    sf::Font m_font; // Phase 5
+    sf::Font m_font;
 
     sf::Music m_background_music; // Background music for the game
 };
