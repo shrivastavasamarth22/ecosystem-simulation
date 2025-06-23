@@ -1,38 +1,67 @@
 # Compiler and flags
-# -I includes/ adds the includes directory to the header search path.
-# -I sfml/include adds SFML headers to the search path.
-# -L sfml/lib adds SFML libraries to the library search path.
+# -I include/ adds the include directory to the header search path.
+# -I external/SFML/include adds SFML headers to the search path.
+# -L external/SFML/lib adds SFML libraries to the library search path.
 # -fopenmp enables OpenMP support.
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -g -I includes/ -I sfml/include -fopenmp
+CXXFLAGS = -std=c++17 -Wall -Wextra -g -I include/ -I external/SFML/include -fopenmp
 
 # The name of the final executable file.
 TARGET = simulation.exe # <--- Use .exe extension for Windows executable
 
-# A list of all the source code files (.cpp) in the project.
-SOURCES = main.cpp World.cpp EntityManager.cpp SimulationSystems.cpp Resource.cpp Tile.cpp Random.cpp GraphicsRenderer.cpp
+# Source directories
+SRC_DIR = src
+BUILD_DIR = build/obj
 
-# This line automatically creates a list of object files (.o) from the source files.
-OBJECTS = $(filter %.o, $(SOURCES:.cpp=.o))
+# A list of all the source code files (.cpp) in the project.
+SOURCES = $(SRC_DIR)/main.cpp \
+          $(SRC_DIR)/core/World.cpp \
+          $(SRC_DIR)/core/EntityManager.cpp \
+          $(SRC_DIR)/core/Random.cpp \
+          $(SRC_DIR)/systems/SimulationSystems.cpp \
+          $(SRC_DIR)/resources/Resource.cpp \
+          $(SRC_DIR)/resources/Tile.cpp \
+          $(SRC_DIR)/graphics/GraphicsRenderer.cpp
+
+# Object files in build directory
+OBJECTS = $(BUILD_DIR)/main.o \
+          $(BUILD_DIR)/World.o \
+          $(BUILD_DIR)/EntityManager.o \
+          $(BUILD_DIR)/Random.o \
+          $(BUILD_DIR)/SimulationSystems.o \
+          $(BUILD_DIR)/Resource.o \
+          $(BUILD_DIR)/Tile.o \
+          $(BUILD_DIR)/GraphicsRenderer.o
 
 # Header files for dependency tracking
-HEADERS = $(wildcard includes/*.h)
+HEADERS = $(wildcard include/*/*.h)
 
 # The default rule: build the target
 all: $(TARGET)
 
 # Rule to link the target executable.
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -L sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -fopenmp
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -L external/SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -fopenmp
 
-# Generic rule to compile a .cpp file into a .o (object) file.
-%.o: %.cpp $(HEADERS)
+# Generic rules to compile source files into object files in build directory
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/core/%.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/systems/%.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/resources/%.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/graphics/%.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Rule to clean up build files
-# --- MODIFIED CLEAN RULE ---
 clean:
-	@DEL $(OBJECTS) $(TARGET) >NUL 2>&1 || true
+	-@DEL $(BUILD_DIR)\*.o $(TARGET) >NUL 2>&1
 	@echo Clean complete.
 
 .PHONY: all clean

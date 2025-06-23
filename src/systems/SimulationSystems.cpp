@@ -1,7 +1,7 @@
-#include "includes/SimulationSystems.h"
-#include "includes/AnimalConfig.h" // Need constants
-#include "includes/World.h"
-#include "includes/Random.h"
+#include "systems/SimulationSystems.h"
+#include "common/AnimalConfig.h" // Need constants
+#include "core/World.h"
+#include "core/Random.h"
 #include <algorithm>
 #include <cmath>
 #include <random>

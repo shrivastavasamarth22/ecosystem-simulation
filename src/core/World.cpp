@@ -1,10 +1,10 @@
-#include "includes/World.h"
-#include "includes/Resource.h"
-#include "includes/Tile.h"
-#include "includes/SimulationSystems.h"
-#include "includes/AnimalConfig.h"
-#include "includes/Random.h"
-#include "includes/GraphicsRenderer.h"
+#include "core/World.h"
+#include "resources/Resource.h"
+#include "resources/Tile.h"
+#include "systems/SimulationSystems.h"
+#include "common/AnimalConfig.h"
+#include "core/Random.h"
+#include "graphics/GraphicsRenderer.h"
 
 #include <iostream>
 #include <vector>

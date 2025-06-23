@@ -1,4 +1,4 @@
-#include "includes/Tile.h"
+#include "resources/Tile.h"
 
 int Tile::getConsumableAmount() const {
     // You can consume up to the current amount, up to a certain limit per turn if needed

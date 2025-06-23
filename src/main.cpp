@@ -1,7 +1,7 @@
-#include "includes/World.h"
-#include "includes/GraphicsRenderer.h" // <-- Include our new renderer
-#include "includes/AnimalConfig.h"     // Needed for constants
-#include "includes/EntityManager.h"    // Needed for EntityManager access (later)
+#include "core/World.h"
+#include "graphics/GraphicsRenderer.h" // <-- Include our new renderer
+#include "common/AnimalConfig.h"     // Needed for constants
+#include "core/EntityManager.h"    // Needed for EntityManager access (later)
 
 #include <iostream>
 #include <thread>

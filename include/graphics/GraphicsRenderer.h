@@ -5,10 +5,10 @@
 #include <SFML/Audio.hpp>
 #include <string>
 #include <map>
-#include "World.h" // Needs World definition for draw functions later
-#include "EntityManager.h" // Needs EntityManager definition for draw functions later
-#include "Resource.h" // Needs Resource definition for draw functions later
-#include "AnimalTypes.h"
+#include "core/World.h" // Needs World definition for draw functions later
+#include "core/EntityManager.h" // Needs EntityManager definition for draw functions later
+#include "resources/Resource.h" // Needs Resource definition for draw functions later
+#include "common/AnimalTypes.h"
 
 class GraphicsRenderer {
     public:

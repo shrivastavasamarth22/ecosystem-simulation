@@ -1,9 +1,9 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "Tile.h"
+#include "resources/Tile.h"
 #include "EntityManager.h"
-#include "AnimalTypes.h"
+#include "common/AnimalTypes.h"
 #include <vector>
 #include <memory>
 #include <cmath>

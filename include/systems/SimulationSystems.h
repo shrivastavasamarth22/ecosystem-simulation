@@ -1,8 +1,8 @@
 #ifndef SIMULATION_SYSTEMS_H
 #define SIMULATION_SYSTEMS_H
 
-#include "EntityManager.h"
-#include "World.h"
+#include "core/EntityManager.h"
+#include "core/World.h"
 #include <cstddef>
 
 // We can organize related logic within namespaces

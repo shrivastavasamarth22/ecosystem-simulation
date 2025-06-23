@@ -1,5 +1,51 @@
-/.vscode
+# IDE and Editor files
+/.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+build/
 *.o
+*.obj
+*.exe
+*.out
+*.app
+
+# Executable
 simulation.exe
-/SFML
+simulation
+
+# External libraries (now in external/)
+/external/SFML/
 *.dll
+
+# Debug files
+*.dSYM/
+*.pdb
+*.ilk
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# CMake (if ever used)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.bak

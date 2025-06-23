@@ -1,27 +1,27 @@
-#include "includes/GraphicsRenderer.h"
-#include "includes/AnimalTypes.h"
-#include "includes/Resource.h"
-#include "includes/Tile.h"
-#include "includes/EntityManager.h"
+#include "graphics/GraphicsRenderer.h"
+#include "common/AnimalTypes.h"
+#include "resources/Resource.h"
+#include "resources/Tile.h"
+#include "core/EntityManager.h"
 #include <iostream>
 #include <sstream>
 
 // Define texture file paths
 const std::string ASSETS_PATH = "assets/";
-const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "empty_tile.png";
-const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "grass_tile.png";
-const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "berry_tile.png"; 
+const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/empty_tile.png";
+const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/grass_tile.png";
+const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/berry_tile.png"; 
 
 // --- Animal Texture Paths ---
-const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "herbivore.png";
-const std::string CARNIVORE_TEXTURE_PATH = ASSETS_PATH + "carnivore.png";
-const std::string OMNIVORE_TEXTURE_PATH = ASSETS_PATH + "omnivore.png";
+const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/herbivore.png";
+const std::string CARNIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/carnivore.png";
+const std::string OMNIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/omnivore.png";
 
 // --- Font File Path ---
-const std::string FONT_PATH = ASSETS_PATH + "daydream.ttf";
+const std::string FONT_PATH = ASSETS_PATH + "fonts/daydream.ttf";
 
 // Backround music file path
-const std::string BACKGROUND_MUSIC_PATH = ASSETS_PATH + "background_music.mp3";
+const std::string BACKGROUND_MUSIC_PATH = ASSETS_PATH + "audio/background_music.mp3";
 
 GraphicsRenderer::GraphicsRenderer() : m_window(), m_tile_size(0), m_background_music() {
     // Constructor doesn't create the window yet, init does.

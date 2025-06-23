@@ -1,4 +1,4 @@
-#include "includes/Resource.h"
+#include "resources/Resource.h"
 
 const ResourceType RESOURCE_GRASS = {
     "Grass",

@@ -1,7 +1,7 @@
 #ifndef ENTITY_MANAGER_H
 #define ENTITY_MANAGER_H
 
-#include "AnimalTypes.h"
+#include "common/AnimalTypes.h"
 #include <vector>
 #include <cstddef> // For size_t
 
