@@ -11,7 +11,10 @@ const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "empty_tile.png";
 const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "grass_tile.png";
 const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "berry_tile.png"; 
 
-GraphicsRenderer::GraphicsRenderer() : m_window(), m_tile_size(0) {
+// Backround music file path
+const std::string BACKGROUND_MUSIC_PATH = ASSETS_PATH + "background_music.mp3";
+
+GraphicsRenderer::GraphicsRenderer() : m_window(), m_tile_size(0), m_background_music() {
     // Constructor doesn't create the window yet, init does.
 }
 
@@ -28,27 +31,33 @@ void GraphicsRenderer::init(int world_width, int world_height, int tile_size, co
     m_window.create(sf::VideoMode(window_width, window_height), title);
     m_window.setVerticalSyncEnabled(true);
 
-    // --- NEW: Load Textures ---
-    // Load the empty tile texture
+
+    // --- Load Textures ---
     if (!m_empty_tile_texture.loadFromFile(EMPTY_TILE_TEXTURE_PATH)) {
-        // Handle error - e.g., print to console, throw exception
         std::cerr << "Error loading empty tile texture: " << EMPTY_TILE_TEXTURE_PATH << std::endl;
-        // Keep running with default white texture, or exit? Let's continue.
     }
-
-    // Load resource tile textures and map them to ResourceType pointers
-    // Note: Ensure the texture files exist and paths are correct.
-    // Note: Need to access the global RESOURCE_GRASS and RESOURCE_BERRIES defined in Resource.cpp.
-    //      They should be externed in Resource.h. We already did that.
-
+    // Ensure RESOURCE_GRASS and RESOURCE_BERRIES are defined in Resource.cpp and externed in Resource.h
     if (!m_resource_tile_textures[&RESOURCE_GRASS].loadFromFile(GRASS_TILE_TEXTURE_PATH)) {
          std::cerr << "Error loading grass texture: " << GRASS_TILE_TEXTURE_PATH << std::endl;
     }
-     if (!m_resource_tile_textures[&RESOURCE_BERRIES].loadFromFile(BERRY_TILE_TEXTURE_PATH)) {
+    if (!m_resource_tile_textures[&RESOURCE_BERRIES].loadFromFile(BERRY_TILE_TEXTURE_PATH)) {
          std::cerr << "Error loading berry texture: " << BERRY_TILE_TEXTURE_PATH << std::endl;
     }
 
     // Texture loading for animals and font will go here in later phases.
+
+
+    // --- NEW: Load and Play Background Music ---
+    // Open the music file
+    if (!m_background_music.openFromFile(BACKGROUND_MUSIC_PATH)) {
+        std::cerr << "Error loading background music: " << BACKGROUND_MUSIC_PATH << std::endl;
+        // Handle error: Music will just not play.
+    } else {
+        // Set the music to loop
+        m_background_music.setLoop(true);
+        // Start playing the music
+        m_background_music.play();
+    }
 }
 
 bool GraphicsRenderer::isOpen() const {

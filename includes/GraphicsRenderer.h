@@ -2,6 +2,7 @@
 #define GRAPHICS_RENDERER_H
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <string>
 #include <map>
 #include "World.h" // Needs World definition for draw functions later
@@ -46,6 +47,8 @@ class GraphicsRenderer {
     // Add animal textures/font here in later phases
     // std::map<AnimalType, sf::Texture> m_animal_textures; // Phase 3
     // sf::Font m_font; // Phase 5
+
+    sf::Music m_background_music; // Background music for the game
 };
 
 #endif // GRAPHICS_RENDERER_H

@@ -23,7 +23,7 @@ all: $(TARGET)
 
 # Rule to link the target executable.
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -L sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -fopenmp
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -L sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -fopenmp
 
 # Generic rule to compile a .cpp file into a .o (object) file.
 %.o: %.cpp $(HEADERS)
