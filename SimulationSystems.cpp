@@ -485,7 +485,10 @@ namespace ActionSystem {
                         int dx = std::abs(data.x[i] - data.x[target_entity_id]);
                         int dy = std::abs(data.y[i] - data.y[target_entity_id]);
 
-                        if (dx <= 1 && dy <= 1 && (dx > 0 || dy > 0))
+                        // --- MODIFIED COMBAT CONDITION ---
+                        // Allow combat if entities are adjacent OR on the same tile.
+                        // The old condition (dx > 0 || dy > 0) prevented combat on the same tile, causing a deadlock.
+                        if (dx <= 1 && dy <= 1)
                         {
                             // --- Attack ---
                             int damage_to_deal = data.current_damage[i];
@@ -494,7 +497,7 @@ namespace ActionSystem {
                             // --- Energy Gain from Kill (if target died) ---
                             // Only gain energy if the target is dead AFTER this action.
                             // And only if the killer's type is NOT the same as the target's type (no cannibalism energy gain for territorial fights).
-                            if (!data.is_alive[target_entity_id] && data.type[i] != data.type[target_entity_id]) { // <-- NEW Check
+                            if (!data.is_alive[target_entity_id] && data.type[i] != data.type[target_entity_id]) {
                                 // Calculate nutritional value of the killed entity
                                 int target_age = data.age[target_entity_id];
                                 int target_base_nut = data.base_nutritional_value[target_entity_id];
@@ -508,9 +511,6 @@ namespace ActionSystem {
                                 // Add energy to the attacker, clamping at max
                                 data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
                             }
-                            // Optional: Add a small energy cost for engaging in combat regardless of kill?
-                            // data.energy[i] = std::max(0, data.energy[i] - COMBAT_ENGAGE_COST); // Needs a constant
-
                         }
                     }
                 }
