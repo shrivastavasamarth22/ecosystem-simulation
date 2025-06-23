@@ -146,7 +146,7 @@ void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
     for (size_t i = 0; i < num_entities; ++i) {
         // --- This check prevents drawing dead entities ---
         if (!entityManager.is_alive[i]) {
-             continue; // Skip to the next entity if this one is not alive
+                continue; // Skip to the next entity if this one is not alive
         }
 
         AnimalType entity_type = entityManager.type[i];

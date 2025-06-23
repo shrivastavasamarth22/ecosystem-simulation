@@ -77,9 +77,9 @@ int main() {
         // --- NEW: Draw the world grid ---
         renderer.drawWorld(world); // <-- Call the new drawing function
 
-        // --- Draw the entities (animals) ---
-        renderer.drawEntities(world.getEntityManager());
-        // renderer.drawUI(world); // Phase 5xx
+        // Draw entities and UI here in later phases
+        renderer.drawEntities(world.getEntityManager()); // Phase 3
+        // renderer.drawUI(world); // Phase 5
 
         renderer.display(); // Display the drawn frame
 

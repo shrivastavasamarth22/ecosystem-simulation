@@ -4,11 +4,13 @@
 #include "includes/SimulationSystems.h"
 #include "includes/AnimalConfig.h"
 #include "includes/Random.h"
+#include "includes/GraphicsRenderer.h"
 
 #include <iostream>
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <cstddef>
 
 World::World(int w, int h, int cell_size)
     : width(w), height(h), turn_count(0),

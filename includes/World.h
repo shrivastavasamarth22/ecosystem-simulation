@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 #include <cmath>
-#include <type_traits>
+#include <cstddef>
 
 using SpatialGridCell = std::vector<size_t>;
 
