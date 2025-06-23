@@ -39,29 +39,46 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Real-time UI Overlay:** Displays key simulation statistics (turn count, population counts by species) as text overlaid on the graphical world view.
 - **Background Music:** Plays an MP3 file on loop in the background for atmospheric effect.
 
-## Project Structure (Includes Subdirectory)
+## Project Structure
 
 ```
 ecosystem-simulation/
-├── main.cpp               # Entry point, initializes World/Renderer, runs main SFML loop and simulation ticks
-├── World.cpp              # Manages the grid, spatial partitioning, owns EntityManager, orchestrates system execution
-├── EntityManager.cpp      # Central data store (SoA) and entity lifecycle management (create/destroy)
-├── SimulationSystems.cpp  # Contains implementations of all simulation systems (AI, Movement, Action, Metabolism, Reproduction)
-├── Resource.cpp           # Defines specific resource types (e.g., Grass, Berries) and their properties
-├── Tile.cpp               # Manages resource state and symbol on individual grid tiles
-├── Random.cpp             # Defines the global random number generator
-├── GraphicsRenderer.cpp   # Manages the SFML window, loads textures/fonts, implements drawing logic
-├── Makefile               # Build configuration using g++ and OpenMP
-└── includes/
-    ├── World.h
-    ├── EntityManager.h
-    ├── SimulationSystems.h
-    ├── Resource.h
-    ├── Tile.h
-    ├── Random.h             # Declares the global RNG
-    ├── GraphicsRenderer.h   # Declares the GraphicsRenderer class
-    ├── AnimalConfig.h     # Centralized balancing constants for animals
-    └── AnimalTypes.h      # Defines shared enums (AnimalType, AIState)
+├── src/                          # Source files
+│   ├── main.cpp                  # Entry point, initializes World/Renderer, runs main SFML loop
+│   ├── core/                     # Core simulation logic
+│   │   ├── World.cpp            # Manages grid, spatial partitioning, orchestrates system execution
+│   │   ├── EntityManager.cpp    # Central data store (SoA) and entity lifecycle management
+│   │   └── Random.cpp           # Global random number generator
+│   ├── systems/                  # Simulation systems
+│   │   └── SimulationSystems.cpp # AI, Movement, Action, Metabolism, Reproduction systems
+│   ├── resources/                # Resource and environment management
+│   │   ├── Resource.cpp         # Resource type definitions (Grass, Berries)
+│   │   └── Tile.cpp             # Individual grid tile management
+│   └── graphics/                 # Rendering and visualization
+│       └── GraphicsRenderer.cpp # SFML window, textures, UI rendering
+│
+├── include/                      # Header files
+│   ├── core/                     # Core component headers
+│   ├── systems/                  # System headers
+│   ├── resources/                # Resource headers
+│   ├── graphics/                 # Graphics headers
+│   └── common/                   # Shared definitions
+│       ├── AnimalConfig.h       # Balancing constants for all species
+│       └── AnimalTypes.h        # Shared enums (AnimalType, AIState)
+│
+├── assets/                       # Game assets
+│   ├── textures/                # Entity and tile sprites (PNG)
+│   ├── fonts/                   # UI fonts (TTF)
+│   └── audio/                   # Background music (MP3)
+│
+├── build/                        # Build artifacts
+│   └── obj/                     # Compiled object files
+│
+├── external/                     # Third-party libraries
+│   └── SFML/                    # SFML graphics library
+│
+├── docs/                         # Documentation
+└── Makefile                      # Build configuration using g++ and OpenMP
 ```
 
 ## Building and Running
@@ -75,8 +92,8 @@ ecosystem-simulation/
 ### Setting up SFML on Windows (MinGW-w64)
 1.  Install MinGW-w64 with g++ and make (e.g., via Chocolatey `choco install mingw` or Scoop `scoop install make gcc`).
 2.  Download the correct "MinGW-w64" build of SFML from the official website ([sfml-dev.org](https://www.sfml-dev.org/download.php)) that matches your compiler version.
-3.  Extract the SFML zip into a subdirectory named `sfml` inside your project root (`ecosystem-simulation/sfml/`).
-4.  Copy the necessary SFML DLL files (`sfml-graphics-*.dll`, `sfml-window-*.dll`, `sfml-system-*.dll`, `sfml-audio-*.dll`, and potentially dependencies like `openal32.dll`, etc.) from `sfml/bin` into the **same directory as your `simulation.exe`**.
+3.  Extract the SFML zip into the `external/SFML/` directory in your project root.
+4.  Copy the necessary SFML DLL files (`sfml-graphics-*.dll`, `sfml-window-*.dll`, `sfml-system-*.dll`, `sfml-audio-*.dll`, and potentially dependencies like `openal32.dll`, etc.) from `external/SFML/bin` into the **same directory as your `simulation.exe`**.
 
 ### Build with Make (Using OpenMP)
 Open your terminal (Command Prompt/PowerShell on Windows, or your Linux terminal), navigate to the project root, and run:
@@ -102,7 +119,7 @@ The simulation is built around a Data-Oriented Design (DOD) using an Entity-Syst
 
 ## Configuration & Balancing
 
-Initial population counts, world size, spatial grid cell size, and simulation speed can be modified in `main.cpp`. The core balance of the ecosystem is determined by the extensive attribute and behavior constants defined in `includes/AnimalConfig.h` and the resource properties in `Resource.cpp`. Tweaking these values is essential for achieving stable or interesting population dynamics.
+Initial population counts, world size, spatial grid cell size, and simulation speed can be modified in `src/main.cpp`. The core balance of the ecosystem is determined by the extensive attribute and behavior constants defined in `include/common/AnimalConfig.h` and the resource properties in `src/resources/Resource.cpp`. Tweaking these values is essential for achieving stable or interesting population dynamics.
 
 ## Changelog
 
@@ -137,6 +154,12 @@ Initial population counts, world size, spatial grid cell size, and simulation sp
     - Added animal sprites
     - Implemented Basic UI stats
     - Added basic keyboard events as well as play/pause functionality for the sim.
+- **v2.1: Project Reorganization**
+    - Restructured project with organized directory hierarchy (`src/`, `include/`, `assets/`, `build/`, `external/`, `docs/`)
+    - Separated source code into logical modules (core, systems, resources, graphics)
+    - Reorganized assets into categorized subdirectories (textures, fonts, audio)
+    - Updated build system with clean object file management
+    - Added comprehensive documentation structure
 
 ## License
 
