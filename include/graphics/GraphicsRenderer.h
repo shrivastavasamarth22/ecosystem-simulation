@@ -34,6 +34,7 @@ class GraphicsRenderer {
     void drawWorld(const World& world); 
     void drawEntities(const EntityManager& entityManager);
     void drawUI(const World& world, bool is_paused); 
+    void drawSimulationEndedMessage(); // NEW: Draw "Simulation Ended" message
     private:
     sf::RenderWindow m_window;
     int m_tile_size;

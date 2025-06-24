@@ -201,31 +201,78 @@ void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
         // Optionally restore the previous view here if we had one
         // m_window.setView(m_world_view); // e.g.
         return;
-    }
-
-    const EntityManager& data = world.getEntityManager();
+    }    const EntityManager& data = world.getEntityManager();
     size_t num_entities = data.getEntityCount();
     int herbivore_count = 0; int carnivore_count = 0; int omnivore_count = 0;
     for (size_t i = 0; i < num_entities; ++i) { if (data.is_alive[i]) { switch (data.type[i]) { case AnimalType::HERBIVORE: herbivore_count++; break; case AnimalType::CARNIVORE: carnivore_count++; break; case AnimalType::OMNIVORE:  omnivore_count++; break; default: break; } } }
 
-    // Create text string
-    std::stringstream ss;
-    ss << "Turn: " << world.getTurnCount()
-       << " H: " << herbivore_count
-       << " C: " << carnivore_count
-       << " O: " << omnivore_count
-       << " Total: " << num_entities;
+    // Calculate total living entities
+    int total_living_entities = herbivore_count + carnivore_count + omnivore_count;
 
-    // Create SFML Text object for stats
-    sf::Text stats_text;
-    stats_text.setFont(m_font);
-    stats_text.setString(ss.str());
-    stats_text.setCharacterSize(8);
-    stats_text.setFillColor(sf::Color::White);
-    stats_text.setPosition(10, 10); // Position relative to the UI view's top-left (0,0)
-    m_window.draw(stats_text);
+    // Create turn counter text
+    std::stringstream turn_ss;
+    turn_ss << "Turn: " << world.getTurnCount() << " | Total: " << total_living_entities;
+    
+    sf::Text turn_text;
+    turn_text.setFont(m_font);
+    turn_text.setString(turn_ss.str());
+    turn_text.setCharacterSize(12);
+    turn_text.setFillColor(sf::Color::White);
+    turn_text.setPosition(10, 10);
 
-    // Draw Pause Indicator
+    // Add background for turn text
+    sf::FloatRect turn_bounds = turn_text.getGlobalBounds();
+    sf::RectangleShape turn_background;
+    turn_background.setSize(sf::Vector2f(turn_bounds.width + 20, turn_bounds.height + 10));
+    turn_background.setFillColor(sf::Color(0, 0, 0, 128));
+    turn_background.setPosition(5, 5);
+    
+    m_window.draw(turn_background);
+    m_window.draw(turn_text);    // Draw animal sprites with counts
+    float y_offset = 40; // Start below the turn counter
+    float sprite_size = 24; // Size for UI sprites (increased from 20)
+    float spacing = 32; // Spacing between entries (increased slightly)
+
+    // Helper function to draw animal stat with sprite
+    auto drawAnimalStat = [&](AnimalType type, int count, float y_pos) {
+        auto it = m_animal_textures.find(type);
+        if (it != m_animal_textures.end()) {
+            // Create sprite
+            sf::Sprite animal_sprite;
+            animal_sprite.setTexture(it->second);
+            animal_sprite.setPosition(10, y_pos);
+            
+            // Scale sprite to UI size
+            sf::Vector2u texture_size = animal_sprite.getTexture()->getSize();
+            animal_sprite.setScale(
+                sprite_size / texture_size.x,
+                sprite_size / texture_size.y
+            );            // Create count text
+            sf::Text count_text;
+            count_text.setFont(m_font);
+            count_text.setString(std::to_string(count));
+            count_text.setCharacterSize(14);
+            count_text.setFillColor(sf::Color::White);
+            count_text.setPosition(40, y_pos + 4); // Position next to sprite, adjusted for centering
+
+            // Create background for this stat
+            sf::FloatRect stat_bounds = count_text.getGlobalBounds();
+            sf::RectangleShape stat_background;
+            stat_background.setSize(sf::Vector2f(stat_bounds.width + sprite_size + 20, sprite_size + 6));
+            stat_background.setFillColor(sf::Color(0, 0, 0, 128));
+            stat_background.setPosition(5, y_pos - 3);
+
+            // Draw background, sprite, and text
+            m_window.draw(stat_background);
+            m_window.draw(animal_sprite);
+            m_window.draw(count_text);
+        }
+    };
+
+    // Draw each animal type with its count
+    drawAnimalStat(AnimalType::HERBIVORE, herbivore_count, y_offset);
+    drawAnimalStat(AnimalType::CARNIVORE, carnivore_count, y_offset + spacing);
+    drawAnimalStat(AnimalType::OMNIVORE, omnivore_count, y_offset + spacing * 2);    // Draw Pause Indicator
     if (is_paused) {
         sf::Text pause_text;
         pause_text.setFont(m_font);
@@ -235,12 +282,59 @@ void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
 
         // Position pause text relative to the UI view's top-right
         // Get the bounds AFTER setting string and size to get correct width
-        sf::FloatRect text_bounds = pause_text.getGlobalBounds();
-        pause_text.setPosition(m_window.getSize().x - text_bounds.width - 10, 10); // 10 pixels from right edge, 10 from top
+        sf::FloatRect pause_bounds = pause_text.getGlobalBounds();
+        pause_text.setPosition(m_window.getSize().x - pause_bounds.width - 10, 10); // 10 pixels from right edge, 10 from top
+        
+        // Add background for pause text
+        sf::RectangleShape pause_background;
+        pause_background.setSize(sf::Vector2f(pause_bounds.width + 20, pause_bounds.height + 10));
+        pause_background.setFillColor(sf::Color(0, 0, 0, 128));
+        pause_background.setPosition(m_window.getSize().x - pause_bounds.width - 20, 5);
+        
+        m_window.draw(pause_background);
         m_window.draw(pause_text);
     }
 
     // --- Restore Previous View ---
     // After drawing UI, restore the view that was active before this function was called.
+    m_window.setView(m_window.getDefaultView());
+}
+
+void GraphicsRenderer::drawSimulationEndedMessage() {
+    // Set UI view for drawing centered text
+    sf::View ui_view(sf::FloatRect(0, 0, m_window.getSize().x, m_window.getSize().y));
+    m_window.setView(ui_view);
+
+    if (m_font.getInfo().family.empty()) {
+        m_window.setView(m_window.getDefaultView());
+        return;
+    }
+
+    // Create large "Simulation Ended" text
+    sf::Text end_text;
+    end_text.setFont(m_font);
+    end_text.setString("Simulation Ended");
+    end_text.setCharacterSize(48);
+    end_text.setFillColor(sf::Color::Red);
+    end_text.setStyle(sf::Text::Bold);
+
+    // Center the text on screen
+    sf::FloatRect text_bounds = end_text.getLocalBounds();
+    end_text.setOrigin(text_bounds.left + text_bounds.width / 2.0f, 
+                       text_bounds.top + text_bounds.height / 2.0f);
+    end_text.setPosition(m_window.getSize().x / 2.0f, m_window.getSize().y / 2.0f);
+
+    // Add semi-transparent background for better visibility
+    sf::RectangleShape background;
+    background.setSize(sf::Vector2f(text_bounds.width + 40, text_bounds.height + 20));
+    background.setFillColor(sf::Color(0, 0, 0, 128)); // Semi-transparent black
+    background.setOrigin(background.getSize().x / 2.0f, background.getSize().y / 2.0f);
+    background.setPosition(m_window.getSize().x / 2.0f, m_window.getSize().y / 2.0f);
+
+    // Draw background then text
+    m_window.draw(background);
+    m_window.draw(end_text);
+
+    // Restore default view
     m_window.setView(m_window.getDefaultView());
 }

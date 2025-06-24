@@ -76,14 +76,17 @@ int main() {
                     simulation_ended = true;
                 }
             }
-        }
-
-        // --- Drawing Phase ---
+        }        // --- Drawing Phase ---
         renderer.clear(sf::Color(100, 149, 237)); // Cornflower Blue
 
         renderer.drawWorld(world);
         renderer.drawEntities(world.getEntityManager());
         renderer.drawUI(world, is_paused);
+
+        // Draw simulation ended message if simulation has ended
+        if (simulation_ended) {
+            renderer.drawSimulationEndedMessage();
+        }
 
         renderer.display();
 
