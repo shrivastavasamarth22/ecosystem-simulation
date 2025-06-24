@@ -16,7 +16,7 @@ class GraphicsRenderer {
     ~GraphicsRenderer();
 
     // Initialize the SFML window
-    void init(int world_width, int world_height, int tile_size, const std::string& title);
+    void init(unsigned int window_width, unsigned int window_height, int world_width, int world_height, int tile_size, const std::string& title);
 
     // Check if the window is open
     bool isOpen() const;

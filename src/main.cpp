@@ -22,6 +22,10 @@ int main() {
     const int TILE_SIZE_PIXELS = 20;
     const std::string WINDOW_TITLE = "Ecosystem Simulation";
 
+    // --- NEW: Window Dimensions (Fixed) ---
+    const unsigned int WINDOW_WIDTH_PIXELS = 1920;
+    const unsigned int WINDOW_HEIGHT_PIXELS = 1080;
+
 
     // --- Simulation Setup ---
     World world(WORLD_WIDTH, WORLD_HEIGHT, SPATIAL_GRID_CELL_SIZE);
@@ -29,7 +33,9 @@ int main() {
 
     // --- Graphics Setup ---
     GraphicsRenderer renderer;
-    renderer.init(WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE_PIXELS, WINDOW_TITLE);    // --- Simulation Timing & Control ---
+    // Pass the fixed window dimensions AND the world dimensions to the renderer
+    renderer.init(WINDOW_WIDTH_PIXELS, WINDOW_HEIGHT_PIXELS, WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE_PIXELS, WINDOW_TITLE);
+    // --- Simulation Timing & Control ---
     sf::Clock simulationClock;
     sf::Clock cameraClock; // For smooth camera updates
     sf::Time timeSinceLastUpdate = sf::Time::Zero;

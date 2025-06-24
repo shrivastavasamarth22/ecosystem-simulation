@@ -34,10 +34,8 @@ GraphicsRenderer::~GraphicsRenderer() {
     // automatically cleans up SFML resources (like the window).
 }
 
-void GraphicsRenderer::init(int world_width, int world_height, int tile_size, const std::string& title) {
+void GraphicsRenderer::init(unsigned int window_width, unsigned int window_height, int world_width, int world_height, int tile_size, const std::string& title) {
     m_tile_size = tile_size;
-    unsigned int window_width = world_width * m_tile_size;
-    unsigned int window_height = world_height * m_tile_size;
 
     m_window.create(sf::VideoMode(window_width, window_height), title);
     m_window.setVerticalSyncEnabled(true);
@@ -349,7 +347,7 @@ void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
 
     // --- Restore Previous View ---
     // After drawing UI, restore the view that was active before this function was called.
-    m_window.setView(m_window.getDefaultView());
+    m_window.setView(m_camera_view);
 }
 
 void GraphicsRenderer::drawSimulationEndedMessage() {
@@ -387,8 +385,8 @@ void GraphicsRenderer::drawSimulationEndedMessage() {
     m_window.draw(background);
     m_window.draw(end_text);
 
-    // Restore default view
-    m_window.setView(m_window.getDefaultView());
+    // Restore the camera view
+    m_window.setView(m_camera_view);
 }
 
 // --- Camera System Implementation ---
