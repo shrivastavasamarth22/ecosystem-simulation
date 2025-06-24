@@ -32,12 +32,21 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Basic Territorial Behavior:** Carnivores exhibit territoriality and will engage in lethal combat (`CHASING` state leading to combat) with other Carnivores that enter their territorial radius. Cannibalism does not provide energy gain in territorial fights.
 - **Natural Population Control:** Complex interactions between resource availability, predator-prey relationships, aging, hunger, and intra-species conflict provide dynamic mechanisms for population booms, busts, and cycles.
 
-### Visualization
+### Visualization & User Interface
 - **SFML Graphical Window:** Replaces console output with a dedicated window for visualization.
 - **Textured Grid Rendering:** Draws the world grid using different textures for empty tiles and different resource types (Grass, Berries).
 - **Textured Entity Rendering:** Draws living entities as sprites using textures corresponding to their species type.
-- **Real-time UI Overlay:** Displays key simulation statistics (turn count, population counts by species) as text overlaid on the graphical world view.
+- **Enhanced UI System:** Real-time overlay displaying simulation statistics with sprite-based counters and semi-transparent backgrounds for better readability.
+- **Interactive Camera System:** Full camera control with smooth zoom (mouse wheel), pan (click & drag), reset functionality (R key), and intelligent bounds constraint.
+- **Simulation State Management:** Visual pause indicator, simulation end notification with prominent center-screen message.
 - **Background Music:** Plays an MP3 file on loop in the background for atmospheric effect.
+
+### Controls & Interaction
+- **Mouse Wheel:** Smooth zoom in/out with intelligent limits
+- **Left Click + Drag:** Pan camera around the simulation world
+- **R Key:** Reset camera to optimal view showing entire world
+- **P Key:** Pause/unpause simulation
+- **Escape Key:** Close simulation window
 
 ## Project Structure
 
@@ -160,6 +169,22 @@ Initial population counts, world size, spatial grid cell size, and simulation sp
     - Reorganized assets into categorized subdirectories (textures, fonts, audio)
     - Updated build system with clean object file management
     - Added comprehensive documentation structure
+- **v2.2: Bug Fixes & Movement Enhancement**
+    - Fixed critical bug where animals could get permanently stuck when seeking already-consumed resources
+    - Implemented diagonal movement for more natural animal paths (replaced jerky L-shaped movement)
+    - Resolved combat deadlock where entities on the same tile couldn't attack each other
+    - Corrected UI entity count discrepancy between displayed totals and actual living entities
+- **v2.3: Enhanced User Interface**
+    - Replaced text-based species counters with visual sprite-based display
+    - Added semi-transparent backgrounds to all UI elements for improved readability
+    - Implemented "Simulation Ended" message with prominent center-screen display
+    - Enhanced visual feedback and polish throughout the interface
+- **v2.4: Interactive Camera System**
+    - Added comprehensive camera system with smooth zoom, pan, and reset functionality
+    - Implemented intelligent camera bounds and zoom constraints to prevent infinite scrolling
+    - Added mouse wheel zoom with zoom-to-cursor behavior for intuitive navigation
+    - Integrated left-click drag panning with proper coordinate transformation
+    - Added R key reset to automatically fit entire simulation world in view
 
 ## License
 

@@ -23,7 +23,9 @@ const std::string FONT_PATH = ASSETS_PATH + "fonts/daydream.ttf";
 // Backround music file path
 const std::string BACKGROUND_MUSIC_PATH = ASSETS_PATH + "audio/background_music.mp3";
 
-GraphicsRenderer::GraphicsRenderer() : m_window(), m_tile_size(0), m_background_music() {
+GraphicsRenderer::GraphicsRenderer() : m_window(), m_tile_size(0), m_background_music(),
+    m_zoom_level(1.0f), m_target_zoom_level(1.0f), m_camera_center(0.0f, 0.0f), m_is_dragging(false), 
+    m_last_mouse_pos(0, 0), m_min_zoom(0.2f), m_max_zoom(5.0f) {
     // Constructor doesn't create the window yet, init does.
 }
 
@@ -76,10 +78,12 @@ void GraphicsRenderer::init(int world_width, int world_height, int tile_size, co
         // Handle error: Music will just not play.
     } else {
         // Set the music to loop
-        m_background_music.setLoop(true);
-        // Start playing the music
+        m_background_music.setLoop(true);        // Start playing the music
         m_background_music.play();
     }
+
+    // --- Initialize Camera System ---
+    initializeCamera(world_width, world_height);
 }
 
 bool GraphicsRenderer::isOpen() const {
@@ -92,15 +96,57 @@ void GraphicsRenderer::handleEvents() {
         // --- Basic window closing ---
         if (event.type == sf::Event::Closed) {
             m_window.close();
-        }
-
-        // --- NEW: Handle Keyboard Input ---
+        }        // --- Keyboard Input ---
         if (event.type == sf::Event::KeyPressed) {
             // Example: Close window on Escape key
             if (event.key.code == sf::Keyboard::Escape) {
                 m_window.close();
             }
+            // Reset camera with R key
+            if (event.key.code == sf::Keyboard::R) {
+                resetCamera();
+            }
             // We will handle pause/unpause in main.cpp as it controls the simulation state.
+        }
+
+        // --- Camera Controls ---        // Mouse wheel for zooming
+        if (event.type == sf::Event::MouseWheelScrolled) {
+            if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
+                // Update target zoom level for smooth zooming
+                float zoom_factor = (event.mouseWheelScroll.delta > 0) ? 0.9f : 1.1f;
+                m_target_zoom_level *= zoom_factor;
+                
+                // Clamp target zoom level to reasonable bounds
+                m_target_zoom_level = std::max(m_min_zoom, std::min(m_max_zoom, m_target_zoom_level));
+            }
+        }
+
+        // Mouse button press/release for dragging
+        if (event.type == sf::Event::MouseButtonPressed) {
+            if (event.mouseButton.button == sf::Mouse::Left) {
+                m_is_dragging = true;
+                m_last_mouse_pos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+            }
+        }
+
+        if (event.type == sf::Event::MouseButtonReleased) {
+            if (event.mouseButton.button == sf::Mouse::Left) {
+                m_is_dragging = false;
+            }
+        }
+
+        // Mouse movement for panning
+        if (event.type == sf::Event::MouseMoved && m_is_dragging) {
+            sf::Vector2i current_mouse_pos(event.mouseMove.x, event.mouseMove.y);
+            sf::Vector2i delta = m_last_mouse_pos - current_mouse_pos;
+
+            // Convert pixel delta to world coordinates
+            sf::Vector2f world_delta = m_window.mapPixelToCoords(delta, m_camera_view) - 
+                                       m_window.mapPixelToCoords(sf::Vector2i(0, 0), m_camera_view);            m_camera_center += world_delta;
+            constrainCamera(); // Keep camera within bounds
+            updateCameraView();
+
+            m_last_mouse_pos = current_mouse_pos;
         }
     }
 }
@@ -115,6 +161,9 @@ void GraphicsRenderer::display() {
 
 // --- drawWorld Implementation ---
 void GraphicsRenderer::drawWorld(const World& world) {
+    // Set camera view for world rendering
+    m_window.setView(m_camera_view);
+
     // Iterate through each tile in the world grid
     for (int y = 0; y < world.getHeight(); ++y) {
         for (int x = 0; x < world.getWidth(); ++x) {
@@ -156,6 +205,9 @@ void GraphicsRenderer::drawWorld(const World& world) {
 
 // --- drawEntities Implementation ---
 void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
+    // Use the same camera view as the world
+    m_window.setView(m_camera_view);
+
     size_t num_entities = entityManager.getEntityCount();
 
     for (size_t i = 0; i < num_entities; ++i) {
@@ -337,4 +389,105 @@ void GraphicsRenderer::drawSimulationEndedMessage() {
 
     // Restore default view
     m_window.setView(m_window.getDefaultView());
+}
+
+// --- Camera System Implementation ---
+void GraphicsRenderer::initializeCamera(int world_width, int world_height) {
+    // Set world bounds
+    float world_pixel_width = world_width * m_tile_size;
+    float world_pixel_height = world_height * m_tile_size;
+    m_world_bounds = sf::FloatRect(0, 0, world_pixel_width, world_pixel_height);
+    
+    // Initialize camera to show the entire world
+    m_camera_center = sf::Vector2f(world_pixel_width / 2.0f, world_pixel_height / 2.0f);
+    
+    // Calculate zoom to fit world exactly in window
+    float window_aspect = static_cast<float>(m_window.getSize().x) / m_window.getSize().y;
+    float world_aspect = world_pixel_width / world_pixel_height;
+    
+    if (world_aspect > window_aspect) {
+        // World is wider than window - fit width
+        m_zoom_level = world_pixel_width / m_window.getSize().x;
+    } else {
+        // World is taller than window - fit height
+        m_zoom_level = world_pixel_height / m_window.getSize().y;
+    }
+    
+    // Set maximum zoom out to current level (shows entire world)
+    m_max_zoom = m_zoom_level;
+    m_target_zoom_level = m_zoom_level;
+    
+    // Create initial camera view
+    m_camera_view = sf::View(m_camera_center, 
+                            sf::Vector2f(m_window.getSize().x, m_window.getSize().y));
+    
+    updateCameraView();
+}
+
+void GraphicsRenderer::updateCamera(float delta_time) {
+    smoothZoom(delta_time);
+    constrainCamera();
+    updateCameraView();
+}
+
+void GraphicsRenderer::smoothZoom(float delta_time) {
+    // Smooth zoom transition
+    if (std::abs(m_zoom_level - m_target_zoom_level) > 0.001f) {
+        float zoom_speed = 5.0f; // Adjust for zoom speed
+        m_zoom_level += (m_target_zoom_level - m_zoom_level) * zoom_speed * delta_time;
+    }
+}
+
+void GraphicsRenderer::constrainCamera() {
+    // First, constrain zoom level
+    m_zoom_level = std::max(m_min_zoom, std::min(m_max_zoom, m_zoom_level));
+    m_target_zoom_level = std::max(m_min_zoom, std::min(m_max_zoom, m_target_zoom_level));
+    
+    // Calculate current view bounds
+    sf::Vector2f view_size(m_window.getSize().x * m_zoom_level, m_window.getSize().y * m_zoom_level);
+    float half_width = view_size.x / 2.0f;
+    float half_height = view_size.y / 2.0f;
+    
+    // Always constrain camera center to keep view within world bounds
+    float min_x = m_world_bounds.left + half_width;
+    float max_x = m_world_bounds.left + m_world_bounds.width - half_width;
+    float min_y = m_world_bounds.top + half_height;
+    float max_y = m_world_bounds.top + m_world_bounds.height - half_height;
+    
+    // If view is larger than world in any dimension, center it
+    if (view_size.x >= m_world_bounds.width) {
+        m_camera_center.x = m_world_bounds.left + m_world_bounds.width / 2.0f;
+    } else {
+        m_camera_center.x = std::max(min_x, std::min(max_x, m_camera_center.x));
+    }
+    
+    if (view_size.y >= m_world_bounds.height) {
+        m_camera_center.y = m_world_bounds.top + m_world_bounds.height / 2.0f;
+    } else {
+        m_camera_center.y = std::max(min_y, std::min(max_y, m_camera_center.y));
+    }
+}
+
+void GraphicsRenderer::resetCamera() {
+    // Reset to initial position and zoom
+    m_camera_center = sf::Vector2f(m_world_bounds.width / 2.0f, m_world_bounds.height / 2.0f);
+    
+    // Calculate zoom to fit world exactly in window
+    float window_aspect = static_cast<float>(m_window.getSize().x) / m_window.getSize().y;
+    float world_aspect = m_world_bounds.width / m_world_bounds.height;
+    
+    if (world_aspect > window_aspect) {
+        m_target_zoom_level = m_world_bounds.width / m_window.getSize().x;
+    } else {
+        m_target_zoom_level = m_world_bounds.height / m_window.getSize().y;
+    }
+}
+
+void GraphicsRenderer::updateCameraView() {
+    // Update camera view with current zoom level and center
+    sf::Vector2f view_size(m_window.getSize().x * m_zoom_level, 
+                          m_window.getSize().y * m_zoom_level);
+    
+    m_camera_view.setSize(view_size);
+    m_camera_view.setCenter(m_camera_center);
 }

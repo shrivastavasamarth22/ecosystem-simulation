@@ -25,10 +25,11 @@ class GraphicsRenderer {
     void handleEvents();
 
     // Clear the window with a background color
-    void clear(const sf::Color& color = sf::Color::Black);
-
-    // Display the contents of the window
+    void clear(const sf::Color& color = sf::Color::Black);    // Display the contents of the window
     void display();
+
+    // Update camera system (call this each frame)
+    void updateCamera(float delta_time);
 
     // --- Drawing Methods ---
     void drawWorld(const World& world); 
@@ -50,7 +51,25 @@ class GraphicsRenderer {
 
     sf::Font m_font;
 
-    sf::Music m_background_music; // Background music for the game
+    sf::Music m_background_music; // Background music for the game    // --- Camera System ---
+    sf::View m_camera_view;          // Main camera view for world rendering
+    float m_zoom_level;              // Current zoom factor (1.0 = normal)
+    float m_target_zoom_level;       // Target zoom for smooth zooming
+    sf::Vector2f m_camera_center;    // Current camera center position
+    bool m_is_dragging;              // Track if mouse is currently dragging
+    sf::Vector2i m_last_mouse_pos;   // Store last mouse position for drag calculations
+    
+    // Camera bounds and constraints
+    sf::FloatRect m_world_bounds;    // World boundaries for camera constraint
+    float m_min_zoom;                // Minimum zoom level
+    float m_max_zoom;                // Maximum zoom level
+    
+    // Camera helper methods
+    void updateCameraView();
+    void initializeCamera(int world_width, int world_height);
+    void constrainCamera();          // Keep camera within world bounds
+    void resetCamera();              // Reset camera to default position
+    void smoothZoom(float delta_time); // Smooth zoom transitions
 };
 
 #endif // GRAPHICS_RENDERER_H

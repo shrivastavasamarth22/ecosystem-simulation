@@ -11,8 +11,8 @@
 
 int main() {
     // ... (simulation parameters) ...
-    const int WORLD_WIDTH = 50;
-    const int WORLD_HEIGHT = 25;
+    const int WORLD_WIDTH = 160;
+    const int WORLD_HEIGHT = 90;
     const int SPATIAL_GRID_CELL_SIZE = 15;
     const int INITIAL_HERBIVORES = 25;
     const int INITIAL_OMNIVORES = 10;
@@ -29,10 +29,9 @@ int main() {
 
     // --- Graphics Setup ---
     GraphicsRenderer renderer;
-    renderer.init(WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE_PIXELS, WINDOW_TITLE);
-
-    // --- Simulation Timing & Control ---
+    renderer.init(WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE_PIXELS, WINDOW_TITLE);    // --- Simulation Timing & Control ---
     sf::Clock simulationClock;
+    sf::Clock cameraClock; // For smooth camera updates
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
     sf::Time timePerUpdate = sf::milliseconds(SIMULATION_SPEED_MS);
     bool is_paused = false; // <-- Pause state flag
@@ -76,7 +75,11 @@ int main() {
                     simulation_ended = true;
                 }
             }
-        }        // --- Drawing Phase ---
+        }        // --- Update Camera System ---
+        float camera_delta_time = cameraClock.restart().asSeconds();
+        renderer.updateCamera(camera_delta_time);
+
+        // --- Drawing Phase ---
         renderer.clear(sf::Color(100, 149, 237)); // Cornflower Blue
 
         renderer.drawWorld(world);
