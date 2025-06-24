@@ -64,13 +64,18 @@ ecosystem-simulation/
 │   │   ├── Resource.cpp         # Resource type definitions (Grass, Berries)
 │   │   └── Tile.cpp             # Individual grid tile management
 │   └── graphics/                 # Rendering and visualization
-│       └── GraphicsRenderer.cpp # SFML window, textures, UI rendering
+│       ├── GraphicsRenderer.cpp # SFML window, textures, UI rendering
+│       ├── Camera.cpp           # Handles camera movement, zoom, and input
+│       └── UIManager.cpp        # Manages all UI elements and overlays
 │
 ├── include/                      # Header files
 │   ├── core/                     # Core component headers
 │   ├── systems/                  # System headers
 │   ├── resources/                # Resource headers
 │   ├── graphics/                 # Graphics headers
+│       ├── GraphicsRenderer.h # Main renderer class
+│       ├── Camera.h           # Camera class header
+│       └── UIManager.h        # UI Manager class header
 │   └── common/                   # Shared definitions
 │       ├── AnimalConfig.h       # Balancing constants for all species
 │       └── AnimalTypes.h        # Shared enums (AnimalType, AIState)

@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.5: Graphics System Refactor & Custom Cursor
+**Date:** June 2025
+### Major Features
+- **Custom Cursor:** Implemented a custom cursor using a sprite for improved visual consistency.
+
+### Technical Improvements
+- **Graphics System Refactor:** Decoupled graphics logic by refactoring the `GraphicsRenderer` class into two dedicated classes:
+  - `Camera`: Manages the world view, including zoom, pan, and other camera controls.
+  - `UIManager`: Manages all UI elements, including stats, overlays, and the new custom cursor.
+- **Improved Modularity:** This refactoring significantly improves code organization, making the graphics system more modular and easier to maintain.
+
 ## v2.4: Interactive Camera System
 **Date:** June 2025
 ### Major Features

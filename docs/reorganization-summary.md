@@ -13,7 +13,9 @@ ecosystem-simulation/
 │   ├── core/                     # Core simulation logic
 │   │   ├── World.cpp
 │   │   ├── EntityManager.cpp
-│   │   └── Random.cpp
+│   │   ├── Random.cpp
+│   │   ├── Camera.cpp
+│   │   └── UIManager.cpp
 │   ├── systems/                  # Simulation systems
 │   │   └── SimulationSystems.cpp
 │   ├── resources/                # Resource management

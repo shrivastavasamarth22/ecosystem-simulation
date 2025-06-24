@@ -83,7 +83,7 @@ int main() {
             }
         }        // --- Update Camera System ---
         float camera_delta_time = cameraClock.restart().asSeconds();
-        renderer.updateCamera(camera_delta_time);
+        renderer.update(camera_delta_time);
 
         // --- Drawing Phase ---
         renderer.clear(sf::Color(100, 149, 237)); // Cornflower Blue
