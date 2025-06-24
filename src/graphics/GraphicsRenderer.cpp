@@ -261,7 +261,7 @@ void GraphicsRenderer::drawUI(const World& world, bool is_paused) {
 
     // Create turn counter text
     std::stringstream turn_ss;
-    turn_ss << "Turn: " << world.getTurnCount() << " | Total: " << total_living_entities;
+    turn_ss << "Turn: " << world.getTurnCount() << " Total: " << total_living_entities;
     
     sf::Text turn_text;
     turn_text.setFont(m_font);

@@ -61,7 +61,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/graphics/%.cpp $(HEADERS)
 
 # Rule to clean up build files
 clean:
-	-@DEL $(BUILD_DIR)\*.o $(TARGET) >NUL 2>&1
+	-@DEL "$(subst /,\,$(BUILD_DIR))\*.o" "$(TARGET)" >NUL 2>&1
 	@echo Clean complete.
 
 .PHONY: all clean
