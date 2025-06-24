@@ -97,6 +97,8 @@ int main() {
             renderer.drawSimulationEndedMessage();
         }
 
+        renderer.drawCursor();
+
         renderer.display();
 
     } // End while (renderer.isOpen())

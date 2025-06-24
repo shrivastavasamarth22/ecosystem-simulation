@@ -17,6 +17,9 @@ const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/herbivore.png
 const std::string CARNIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/carnivore.png";
 const std::string OMNIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/omnivore.png";
 
+// --- Cursor Texture Path ---
+const std::string CURSOR_TEXTURE_PATH = ASSETS_PATH + "textures/cursor.png";
+
 // --- Font File Path ---
 const std::string FONT_PATH = ASSETS_PATH + "fonts/daydream.ttf";
 
@@ -64,6 +67,14 @@ void GraphicsRenderer::init(unsigned int window_width, unsigned int window_heigh
         std::cerr << "Error loading omnivore texture: " << OMNIVORE_TEXTURE_PATH << std::endl;
     }
 
+    // --- Load Cursor Texture ---
+    if (!m_cursor_texture.loadFromFile(CURSOR_TEXTURE_PATH)) {
+        std::cerr << "Error loading cursor texture: " << CURSOR_TEXTURE_PATH << std::endl;
+    } else {
+        m_cursor_sprite.setTexture(m_cursor_texture);
+        m_cursor_sprite.setScale(0.5f, 0.5f); // Scale cursor to 50% of its original size
+    }
+
      if (!m_font.loadFromFile(FONT_PATH)) {
         std::cerr << "Error loading font: " << FONT_PATH << std::endl;
         // The program can still run without a font, text won't be displayed.
@@ -82,6 +93,9 @@ void GraphicsRenderer::init(unsigned int window_width, unsigned int window_heigh
 
     // --- Initialize Camera System ---
     initializeCamera(world_width, world_height);
+
+    // --- Hide default mouse cursor ---
+    m_window.setMouseCursorVisible(false);
 }
 
 bool GraphicsRenderer::isOpen() const {
@@ -386,6 +400,24 @@ void GraphicsRenderer::drawSimulationEndedMessage() {
     m_window.draw(end_text);
 
     // Restore the camera view
+    m_window.setView(m_camera_view);
+}
+
+void GraphicsRenderer::drawCursor() {
+    // Set the view to the UI view to ensure the cursor is drawn relative to the window
+    sf::View ui_view(sf::FloatRect(0, 0, m_window.getSize().x, m_window.getSize().y));
+    m_window.setView(ui_view);
+
+    // Get the current mouse position in window coordinates
+    sf::Vector2i mouse_pos = sf::Mouse::getPosition(m_window);
+
+    // Set the sprite position
+    m_cursor_sprite.setPosition(static_cast<sf::Vector2f>(mouse_pos));
+
+    // Draw the sprite
+    m_window.draw(m_cursor_sprite);
+
+    // Restore the default view (or the camera view)
     m_window.setView(m_camera_view);
 }
 

@@ -36,6 +36,8 @@ class GraphicsRenderer {
     void drawEntities(const EntityManager& entityManager);
     void drawUI(const World& world, bool is_paused); 
     void drawSimulationEndedMessage(); // NEW: Draw "Simulation Ended" message
+    void drawCursor();
+
     private:
     sf::RenderWindow m_window;
     int m_tile_size;
@@ -48,6 +50,9 @@ class GraphicsRenderer {
 
     // Add animal textures/font here in later phases
     std::map<AnimalType, sf::Texture> m_animal_textures;
+
+    sf::Texture m_cursor_texture;
+    sf::Sprite m_cursor_sprite;
 
     sf::Font m_font;
 
