@@ -12,17 +12,27 @@
 #include <random>
 #include <algorithm>
 #include <cstddef>
+#include <cmath>
 
 World::World(int w, int h, int cell_size)
     : width(w), height(h), turn_count(0),
       m_entityManager(), // Default construct the entity manager
-      grid(height, std::vector<Tile>(width)),
-      spatial_grid_cell_size(cell_size)
+      grid(height, std::vector<Tile>(width))
 {
+    // Calculate optimal cell size if not provided
+    if (cell_size <= 0) {
+        spatial_grid_cell_size = calculateOptimalCellSize();
+    } else {
+        spatial_grid_cell_size = cell_size;
+    }
+    
     // Calculate and initialize spatial grid dimensions
-    spatial_grid_width = (width + cell_size - 1) / cell_size;
-    spatial_grid_height = (height + cell_size - 1) / cell_size;
+    spatial_grid_width = (width + spatial_grid_cell_size - 1) / spatial_grid_cell_size;
+    spatial_grid_height = (height + spatial_grid_cell_size - 1) / spatial_grid_cell_size;
     spatial_grid.resize(spatial_grid_height, std::vector<SpatialGridCell>(spatial_grid_width));
+    
+    std::cout << "Spatial grid initialized: " << spatial_grid_width << "x" << spatial_grid_height 
+              << " cells (cell size: " << spatial_grid_cell_size << ")" << std::endl;
 }
 
 void World::init(int initial_herbivores, int initial_carnivores, int initial_omnivores) {
@@ -125,15 +135,27 @@ void World::seedResources() {
 }
 
 void World::updateSpatialGrid() {
-    // 1. clear the spatial grid from the previous turn
-    for (int r = 0; r < spatial_grid_height; ++r) {
-        for (int c = 0; c < spatial_grid_width; ++c) {
-            spatial_grid[r][c].clear();
+    // 1. Clear the spatial grid from the previous turn
+    // Optimized: Use a single loop instead of nested loops
+    for (auto& row : spatial_grid) {
+        for (auto& cell : row) {
+            cell.clear();
         }
     }
 
-    // 2. Populate the spaatial grid with current entity positions (indices)
+    // 2. Populate the spatial grid with current entity positions (indices)
     size_t num_entities = m_entityManager.getEntityCount();
+
+    // Reserve capacity to reduce reallocations during population
+    // Estimate average entities per cell to pre-allocate
+    size_t total_cells = spatial_grid_width * spatial_grid_height;
+    size_t avg_entities_per_cell = (num_entities / total_cells) + 2; // +2 for safety margin
+
+    for (auto& row : spatial_grid) {
+        for (auto& cell : row) {
+            cell.reserve(avg_entities_per_cell);
+        }
+    }
 
     for (size_t i = 0; i < num_entities; ++i) {
         // Only add living entities to the spatial grid
@@ -247,17 +269,26 @@ std::vector<size_t> World::getAnimalsNear(const EntityManager& data, int x, int 
 
     int radius_sq = radius * radius;
 
+    // Optimized cell range calculation
     int start_cell_x = std::max(0, (x - radius) / spatial_grid_cell_size);
     int end_cell_x   = std::min(spatial_grid_width - 1, (x + radius) / spatial_grid_cell_size);
     int start_cell_y = std::max(0, (y - radius) / spatial_grid_cell_size);
     int end_cell_y   = std::min(spatial_grid_height - 1, (y + radius) / spatial_grid_cell_size);
 
+    // Pre-allocate result vector based on estimated capacity
+    // Conservative estimate: assume ~3 entities per cell in search area
+    int search_area_cells = (end_cell_x - start_cell_x + 1) * (end_cell_y - start_cell_y + 1);
+    nearby_ids.reserve(search_area_cells * 3);
+
     for (int cell_y = start_cell_y; cell_y <= end_cell_y; ++cell_y) {
         for (int cell_x = start_cell_x; cell_x <= end_cell_x; ++cell_x) {
-            for (size_t entity_id : spatial_grid[cell_y][cell_x]) {
+            const auto& cell = spatial_grid[cell_y][cell_x];
+            
+            // Iterate through entities in this cell
+            for (size_t entity_id : cell) {
                 // Check if the entity is alive and of the correct type (direct comparison)
                 if (data.is_alive[entity_id] && data.type[entity_id] == target_type) {
-                    // Final distance check
+                    // Final distance check using squared distance to avoid sqrt
                     int dx = data.x[entity_id] - x;
                     int dy = data.y[entity_id] - y;
                     if (dx * dx + dy * dy <= radius_sq) {
@@ -284,5 +315,37 @@ const Tile& World::getTile(int x, int y) const {
     }
     static const Tile empty_tile_const;
     return empty_tile_const;
+}
+
+int World::calculateOptimalCellSize() const {
+    // Optimal cell size balances:
+    // 1. Not too small (overhead of many empty cells)
+    // 2. Not too large (entities spread across too many cells)
+    
+    // Base calculation: aim for cells that contain ~5-15 entities on average
+    // Assume reasonable entity density for ecosystem simulation
+    const float TARGET_ENTITIES_PER_CELL = 8.0f;
+    const int EXPECTED_TOTAL_ENTITIES = 300; // Conservative estimate
+    
+    // Calculate total spatial grid cells needed
+    float total_cells_needed = EXPECTED_TOTAL_ENTITIES / TARGET_ENTITIES_PER_CELL;
+    
+    // Calculate cell size to achieve this number of cells
+    float world_area = width * height;
+    float cell_area = world_area / total_cells_needed;
+    int calculated_cell_size = static_cast<int>(std::sqrt(cell_area));
+    
+    // Clamp to reasonable bounds
+    const int MIN_CELL_SIZE = 8;   // Prevent too much overhead
+    const int MAX_CELL_SIZE = 32;  // Prevent inefficient large cells
+    
+    calculated_cell_size = std::max(MIN_CELL_SIZE, std::min(MAX_CELL_SIZE, calculated_cell_size));
+    
+    // Also consider sight radius - cells should be reasonably sized relative to max sight
+    const int MAX_SIGHT_RADIUS = 10; // From animal configs
+    const int SIGHT_BASED_SIZE = MAX_SIGHT_RADIUS * 2; // Cell size should be ~2x max sight
+    
+    // Use the smaller of the two calculations for better performance
+    return std::min(calculated_cell_size, SIGHT_BASED_SIZE);
 }
 

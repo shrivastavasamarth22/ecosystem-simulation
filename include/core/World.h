@@ -36,9 +36,10 @@ class World {
     void updateSpatialGrid();
     void generateBiomes(); // <-- New terrain generation function
     void seedResources();  // <-- New resource seeding function
+    int calculateOptimalCellSize() const; // <-- NEW: Calculate optimal spatial grid cell size
 
     public:
-    World(int w, int h, int cell_size = 15);
+    World(int w, int h, int cell_size = 0); // 0 = auto-calculate optimal size
 
     void init(int initial_herbivores, int initial_carnivores, int initial_omnivores);
     void update(); // This will be the home of our System calls
