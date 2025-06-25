@@ -33,6 +33,9 @@ public:
     void drawCursor();
 
 private:
+    // Helper method for view frustum culling
+    sf::FloatRect getVisibleBounds() const;
+
     sf::RenderWindow m_window;
     int m_tile_size;
     sf::Texture m_empty_tile_texture;

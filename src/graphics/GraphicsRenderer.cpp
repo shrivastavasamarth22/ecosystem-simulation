@@ -4,6 +4,7 @@
 #include "core/EntityManager.h"
 #include "resources/Biome.h"
 #include <iostream>
+#include <algorithm>
 
 // Define texture file paths
 const std::string ASSETS_PATH = "assets/";
@@ -99,8 +100,18 @@ void GraphicsRenderer::update(float delta_time) {
 void GraphicsRenderer::drawWorld(const World& world) {
     m_window.setView(m_camera->getView());
 
-    for (int y = 0; y < world.getHeight(); ++y) {
-        for (int x = 0; x < world.getWidth(); ++x) {
+    // View frustum culling - only render visible tiles
+    sf::FloatRect visible_bounds = getVisibleBounds();
+    
+    // Calculate tile range that intersects with visible area
+    int start_x = std::max(0, static_cast<int>(visible_bounds.left / m_tile_size) - 1);
+    int end_x = std::min(world.getWidth() - 1, static_cast<int>((visible_bounds.left + visible_bounds.width) / m_tile_size) + 1);
+    int start_y = std::max(0, static_cast<int>(visible_bounds.top / m_tile_size) - 1);
+    int end_y = std::min(world.getHeight() - 1, static_cast<int>((visible_bounds.top + visible_bounds.height) / m_tile_size) + 1);
+
+    // Only iterate through visible tiles
+    for (int y = start_y; y <= end_y; ++y) {
+        for (int x = start_x; x <= end_x; ++x) {
             const Tile& tile = world.getTile(x, y);
 
             // 1. Draw the base empty tile texture for the grid background
@@ -136,9 +147,23 @@ void GraphicsRenderer::drawWorld(const World& world) {
 void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
     m_window.setView(m_camera->getView());
 
+    // View frustum culling - only render entities in visible area
+    sf::FloatRect visible_bounds = getVisibleBounds();
+
     for (size_t i = 0; i < entityManager.getEntityCount(); ++i) {
         if (!entityManager.is_alive[i]) {
             continue;
+        }
+
+        // Check if entity is within visible bounds
+        float entity_pixel_x = entityManager.x[i] * m_tile_size;
+        float entity_pixel_y = entityManager.y[i] * m_tile_size;
+        
+        if (entity_pixel_x + m_tile_size < visible_bounds.left || 
+            entity_pixel_x > visible_bounds.left + visible_bounds.width ||
+            entity_pixel_y + m_tile_size < visible_bounds.top || 
+            entity_pixel_y > visible_bounds.top + visible_bounds.height) {
+            continue; // Entity is outside visible area, skip rendering
         }
 
         AnimalType entity_type = entityManager.type[i];
@@ -146,7 +171,7 @@ void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
         if (it != m_animal_textures.end()) {
             sf::Sprite entity_sprite;
             entity_sprite.setTexture(it->second);
-            entity_sprite.setPosition(entityManager.x[i] * m_tile_size, entityManager.y[i] * m_tile_size);
+            entity_sprite.setPosition(entity_pixel_x, entity_pixel_y);
 
             sf::Vector2u texture_size = entity_sprite.getTexture()->getSize();
             entity_sprite.setScale(
@@ -168,4 +193,17 @@ void GraphicsRenderer::drawSimulationEndedMessage() {
 
 void GraphicsRenderer::drawCursor() {
     m_ui_manager->drawCursor(m_window);
+}
+
+sf::FloatRect GraphicsRenderer::getVisibleBounds() const {
+    sf::View current_view = m_camera->getView();
+    sf::Vector2f center = current_view.getCenter();
+    sf::Vector2f size = current_view.getSize();
+    
+    return sf::FloatRect(
+        center.x - size.x / 2.0f,
+        center.y - size.y / 2.0f,
+        size.x,
+        size.y
+    );
 }
