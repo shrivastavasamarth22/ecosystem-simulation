@@ -118,11 +118,8 @@ void GraphicsRenderer::drawWorld(const World& world) {
             sf::Sprite background_sprite;
             background_sprite.setTexture(m_empty_tile_texture);
             background_sprite.setPosition(x * m_tile_size, y * m_tile_size);
-            sf::Vector2u texture_size_bg = background_sprite.getTexture()->getSize();
-            background_sprite.setScale(
-                static_cast<float>(m_tile_size) / texture_size_bg.x,
-                static_cast<float>(m_tile_size) / texture_size_bg.y
-            );
+            // Optimized scaling: 40x40 texture to 20x20 tile
+            background_sprite.setScale(0.5f, 0.5f);
             m_window.draw(background_sprite);
 
             // 2. Draw the resource on top, if it exists
@@ -132,11 +129,8 @@ void GraphicsRenderer::drawWorld(const World& world) {
                 if (it != m_resource_tile_textures.end()) {
                     resource_sprite.setTexture(it->second);
                     resource_sprite.setPosition(x * m_tile_size, y * m_tile_size);
-                    sf::Vector2u texture_size = resource_sprite.getTexture()->getSize();
-                    resource_sprite.setScale(
-                        static_cast<float>(m_tile_size) / texture_size.x,
-                        static_cast<float>(m_tile_size) / texture_size.y
-                    );
+                    // Optimized scaling: 40x40 texture to 20x20 tile
+                    resource_sprite.setScale(0.5f, 0.5f);
                     m_window.draw(resource_sprite);
                 }
             }
@@ -173,11 +167,8 @@ void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
             entity_sprite.setTexture(it->second);
             entity_sprite.setPosition(entity_pixel_x, entity_pixel_y);
 
-            sf::Vector2u texture_size = entity_sprite.getTexture()->getSize();
-            entity_sprite.setScale(
-                static_cast<float>(m_tile_size) / texture_size.x,
-                static_cast<float>(m_tile_size) / texture_size.y
-            );
+            // Optimized scaling: 64x64 animal texture to 20x20 tile
+            entity_sprite.setScale(0.3125f, 0.3125f); // 20/64 = 0.3125
             m_window.draw(entity_sprite);
         }
     }

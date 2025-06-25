@@ -85,11 +85,8 @@ void UIManager::drawUI(sf::RenderWindow& window, const World& world, bool is_pau
             animal_sprite.setTexture(it->second);
             animal_sprite.setPosition(10, y_pos);
             
-            sf::Vector2u texture_size = animal_sprite.getTexture()->getSize();
-            animal_sprite.setScale(
-                sprite_size / texture_size.x,
-                sprite_size / texture_size.y
-            );
+            // Optimized scaling: 64x64 animal texture to 24px UI sprite
+            animal_sprite.setScale(0.375f, 0.375f); // 24/64 = 0.375
 
             sf::Text count_text;
             count_text.setFont(m_font);
