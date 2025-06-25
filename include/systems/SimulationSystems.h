@@ -15,7 +15,7 @@ namespace MetabolismSystem {
     // Need a way to apply damage in the new system without an Animal object.
     // Damage will be applied directly in the Action System later.
     // Let's add a simple helper function for applying damage to a specific entity ID.
-    void applyDamage(EntityManager& data, size_t entity_id, int amount);
+    void applyDamage(EntityManager& data, size_t entity_id, float amount);
 }
 
 namespace MovementSystem {

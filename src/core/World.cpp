@@ -50,7 +50,7 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
 
 void World::generateBiomes() {
     // 1. Define Biome Seed Points
-    const int num_biome_seeds = 50; // More seeds = smaller, more numerous biomes
+    const int num_biome_seeds = 40; // More seeds = smaller, more numerous biomes
     std::vector<std::pair<sf::Vector2i, const BiomeType*>> biome_seeds;
 
     std::uniform_int_distribution<int> distX(0, width - 1);
@@ -62,9 +62,9 @@ void World::generateBiomes() {
         float chance = dist_chance(rng);
 
         const BiomeType* chosen_biome;
-        if (chance < 0.02f) { // 5% chance for Forest (rarest)
+        if (chance < 0.05f) { // 5% chance for Forest (rarest)
             chosen_biome = &BIOME_FOREST;
-        } else if (chance < 0.30f) { // 40% chance for Grassland
+        } else if (chance < 0.35f) { // 40% chance for Grassland
             chosen_biome = &BIOME_GRASSLAND;
         } else { // 55% chance for Barren (most common)
             chosen_biome = &BIOME_BARREN;
@@ -92,8 +92,8 @@ void World::generateBiomes() {
 
 void World::seedResources() {
     std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
-    std::uniform_int_distribution<int> dist_grass_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
-    std::uniform_int_distribution<int> dist_berry_amount(RESOURCE_BERRIES.max_amount / 2, RESOURCE_BERRIES.max_amount);
+    std::uniform_real_distribution<float> dist_grass_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
+    std::uniform_real_distribution<float> dist_berry_amount(RESOURCE_BERRIES.max_amount / 2, RESOURCE_BERRIES.max_amount);
 
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
@@ -110,7 +110,7 @@ void World::seedResources() {
                 cumulative_prob += probability;
 
                 if (chance < cumulative_prob) {
-                    int initial_amount = 0;
+                    float initial_amount = 0.0f;
                     if (resource == &RESOURCE_GRASS) {
                         initial_amount = dist_grass_amount(rng);
                     } else if (resource == &RESOURCE_BERRIES) {

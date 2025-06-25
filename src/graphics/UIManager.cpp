@@ -56,7 +56,7 @@ void UIManager::drawUI(sf::RenderWindow& window, const World& world, bool is_pau
     int total_living_entities = herbivore_count + carnivore_count + omnivore_count;
 
     std::stringstream turn_ss;
-    turn_ss << "Turn: " << world.getTurnCount() << " | Total: " << total_living_entities;
+    turn_ss << "Turn: " << world.getTurnCount() << " Total: " << total_living_entities;
     
     sf::Text turn_text;
     turn_text.setFont(m_font);

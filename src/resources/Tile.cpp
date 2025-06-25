@@ -1,14 +1,14 @@
 #include "resources/Tile.h"
 #include "resources/Biome.h" // Include the full Biome definition
 
-int Tile::getConsumableAmount() const {
+float Tile::getConsumableAmount() const {
     // You can consume up to the current amount, up to a certain limit per turn if needed
     // For now, allow just consuming up to the current amount
     return resource_amount;
 }
 
-int Tile::consume(int amount_requested) {
-    int amount_consumed = std::min(amount_requested, resource_amount);
+float Tile::consume(float amount_requested) {
+    float amount_consumed = std::min(amount_requested, resource_amount);
     resource_amount -= amount_consumed;
 
     return amount_consumed;
@@ -22,7 +22,7 @@ const BiomeType* Tile::getBiome() const {
     return biome_type;
 }
 
-void Tile::setResource(const ResourceType* type, int amount) {
+void Tile::setResource(const ResourceType* type, float amount) {
     resource_type = type;
     resource_amount = amount;
 }
@@ -35,7 +35,7 @@ void Tile::regrow() {
 }
 
 char Tile::getSymbol() const {
-    if (!resource_type || resource_amount <= 0) {
+    if (!resource_type || resource_amount <= 0.0f) {
         return '.'; // Draw empty tile if no resource or amount is zero
     }
 

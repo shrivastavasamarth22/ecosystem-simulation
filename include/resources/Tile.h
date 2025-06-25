@@ -18,7 +18,7 @@ struct Tile {
     // --- Resource Information ---
 
     const ResourceType* resource_type = nullptr; // Pointer to the type of resource on this tile
-    int resource_amount = 0; // Current amount of resource on this tile
+    float resource_amount = 0.0f; // Current amount of resource on this tile
 
     // --- NEW: Biome Information ---
     const BiomeType* biome_type = nullptr;
@@ -29,21 +29,21 @@ struct Tile {
     Tile() = default;
 
     // Constructor to set resource type and initial amount
-    Tile(const ResourceType* type, int initial_amount) : resource_type(type), resource_amount(initial_amount) {}
+    Tile(const ResourceType* type, float initial_amount) : resource_type(type), resource_amount(initial_amount) {}
 
     // --- NEW: Biome Management Methods ---
     void setBiome(const BiomeType* type);
     const BiomeType* getBiome() const;
 
     // --- NEW: Resource Management ---
-    void setResource(const ResourceType* type, int amount);
+    void setResource(const ResourceType* type, float amount);
 
     // --- Resource Managememt Methods ---
     // How much can be consumed this turn
-    int getConsumableAmount() const;
+    float getConsumableAmount() const;
 
     // Consume a given amount, return the actual amount consumed
-    int consume(int amount_requested);
+    float consume(float amount_requested);
 
     // Regrow the resource by its regrowth rate
     void regrow();

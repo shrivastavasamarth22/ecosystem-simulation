@@ -34,29 +34,29 @@ public:
     std::vector<AIState>        state;
 
     // Health & Energy
-    std::vector<int>            health;
-    std::vector<int>            max_health;
-    std::vector<int>            base_max_health;
+    std::vector<float>          health;
+    std::vector<float>          max_health;
+    std::vector<float>          base_max_health;
     std::vector<int>            turns_since_damage;
-    std::vector<int>            energy;
-    std::vector<int>            max_energy;
+    std::vector<float>          energy;
+    std::vector<float>          max_energy;
 
     // Stats
-    std::vector<int>            base_damage;
-    std::vector<int>            base_sight_radius;
-    std::vector<int>            base_speed;
-    std::vector<int>            current_damage;
-    std::vector<int>            current_sight_radius;
-    std::vector<int>            current_speed;
+    std::vector<float>          base_damage;
+    std::vector<float>          base_sight_radius;
+    std::vector<float>          base_speed;
+    std::vector<float>          current_damage;
+    std::vector<float>          current_sight_radius;
+    std::vector<float>          current_speed;
 
     // Life Cycle
     std::vector<int>            age;
 
     // --- NEW: Nutritional Value Stats ---
-    std::vector<int>            base_nutritional_value;
+    std::vector<float>          base_nutritional_value;
     std::vector<int>            prime_age;
-    std::vector<int>            penalty_per_year;
-    std::vector<int>            minimum_nutritional_value;
+    std::vector<float>          penalty_per_year;
+    std::vector<float>          minimum_nutritional_value;
 
 
 private:

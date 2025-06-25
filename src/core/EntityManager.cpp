@@ -54,23 +54,23 @@ size_t EntityManager::createEntity() {
     target_y.push_back(-1);
     target_id.push_back(-1); // Use -1 or a large value for "no target"
     state.push_back(AIState::WANDERING);
-    health.push_back(0);
-    max_health.push_back(0);
-    base_max_health.push_back(0);
+    health.push_back(0.0f);
+    max_health.push_back(0.0f);
+    base_max_health.push_back(0.0f);
     turns_since_damage.push_back(0);
-    energy.push_back(0);
-    max_energy.push_back(0);
-    base_damage.push_back(0);
-    base_sight_radius.push_back(0);
-    base_speed.push_back(0);
-    current_damage.push_back(0);
-    current_sight_radius.push_back(0);
-    current_speed.push_back(0);
+    energy.push_back(0.0f);
+    max_energy.push_back(0.0f);
+    base_damage.push_back(0.0f);
+    base_sight_radius.push_back(0.0f);
+    base_speed.push_back(0.0f);
+    current_damage.push_back(0.0f);
+    current_sight_radius.push_back(0.0f);
+    current_speed.push_back(0.0f);
     age.push_back(0);
-    base_nutritional_value.push_back(0);
+    base_nutritional_value.push_back(0.0f);
     prime_age.push_back(0);
-    penalty_per_year.push_back(0);
-    minimum_nutritional_value.push_back(0);
+    penalty_per_year.push_back(0.0f);
+    minimum_nutritional_value.push_back(0.0f);
     type.push_back(AnimalType::HERBIVORE); // Default, will be overwritten by helpers
 
     num_entities++;

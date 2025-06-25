@@ -115,7 +115,7 @@ void GraphicsRenderer::drawWorld(const World& world) {
             m_window.draw(background_sprite);
 
             // 2. Draw the resource on top, if it exists
-            if (tile.resource_type != nullptr && tile.resource_amount > 0) {
+            if (tile.resource_type != nullptr && tile.resource_amount > 0.0f) {
                 sf::Sprite resource_sprite;
                 auto it = m_resource_tile_textures.find(tile.resource_type);
                 if (it != m_resource_tile_textures.end()) {

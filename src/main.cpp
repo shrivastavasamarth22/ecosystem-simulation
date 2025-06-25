@@ -11,12 +11,12 @@
 
 int main() {
     // ... (simulation parameters) ...
-    const int WORLD_WIDTH = 160;
-    const int WORLD_HEIGHT = 90; 
+    const int WORLD_WIDTH = 320;
+    const int WORLD_HEIGHT = 180; 
     const int SPATIAL_GRID_CELL_SIZE = 15;
-    const int INITIAL_HERBIVORES = 25;
-    const int INITIAL_OMNIVORES = 10;
-    const int INITIAL_CARNIVORES = 8;
+    const int INITIAL_HERBIVORES = 200;
+    const int INITIAL_OMNIVORES = 40;
+    const int INITIAL_CARNIVORES = 20;
     const int SIMULATION_SPEED_MS = 500;
     const int MAX_TURNS = 2000;
     const int TILE_SIZE_PIXELS = 20;

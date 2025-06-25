@@ -8,7 +8,7 @@
 
 namespace MetabolismSystem {
     // Helper function to apply damage directly to entity data
-    void applyDamage(EntityManager& data, size_t entity_id, int amount) {
+    void applyDamage(EntityManager& data, size_t entity_id, float amount) {
         if (entity_id >= data.getEntityCount() || !data.is_alive[entity_id]) {
             return; // Cannot damage invalid or dead entity
         }
@@ -16,9 +16,9 @@ namespace MetabolismSystem {
         data.health[entity_id] -= amount;
         data.turns_since_damage[entity_id] = 0; // Reset regen timer
 
-        if (data.health[entity_id] <= 0) {
+        if (data.health[entity_id] <= 0.0f) {
             data.is_alive[entity_id] = false; // Mark as dead
-            data.health[entity_id] = 0;       // Ensure health is 0 when dead
+            data.health[entity_id] = 0.0f;       // Ensure health is 0 when dead
             // Actual removal from vectors happens in EntityManager::destroyDeadEntities
         }
     }
@@ -38,44 +38,44 @@ namespace MetabolismSystem {
             if (!data.is_alive[i]) continue;
 
             data.age[i]++;
-            data.energy[i]--;
+            data.energy[i] -= 1.0f;
 
             data.current_damage[i] = data.base_damage[i];
             data.current_speed[i] = data.base_speed[i];
             data.current_sight_radius[i] = data.base_sight_radius[i];
 
-            if (data.max_energy[i] > 0) {
-                float energy_percentage = static_cast<float>(data.energy[i]) / data.max_energy[i];
+            if (data.max_energy[i] > 0.0f) {
+                float energy_percentage = data.energy[i] / data.max_energy[i];
                 if (energy_percentage < 0.3f) {
-                    MetabolismSystem::applyDamage(data, i, 5);
+                    MetabolismSystem::applyDamage(data, i, 5.0f);
                     if (!data.is_alive[i]) continue; // Re-check after damage
-                    data.current_damage[i] = std::max(0, data.current_damage[i] + 7);
-                    data.current_speed[i] = std::max(1, data.current_speed[i] + 2);
-                    data.current_sight_radius[i] = std::max(1, data.current_sight_radius[i] + 3);
+                    data.current_damage[i] = std::max(0.0f, data.current_damage[i] + 7.0f);
+                    data.current_speed[i] = std::max(1.0f, data.current_speed[i] + 2.0f);
+                    data.current_sight_radius[i] = std::max(1.0f, data.current_sight_radius[i] + 3.0f);
                 } else if (energy_percentage < 0.5f) {
-                     MetabolismSystem::applyDamage(data, i, 2);
+                     MetabolismSystem::applyDamage(data, i, 2.0f);
                      if (!data.is_alive[i]) continue; // Re-check after damage
-                    data.current_damage[i] = std::max(0, data.current_damage[i] + 2);
-                    data.current_speed[i] = std::max(1, data.current_speed[i] + 1);
-                    data.current_sight_radius[i] = std::max(1, data.current_sight_radius[i] + 1);
+                    data.current_damage[i] = std::max(0.0f, data.current_damage[i] + 2.0f);
+                    data.current_speed[i] = std::max(1.0f, data.current_speed[i] + 1.0f);
+                    data.current_sight_radius[i] = std::max(1.0f, data.current_sight_radius[i] + 1.0f);
                 }
             }
             data.turns_since_damage[i]++;
             const int REGEN_DELAY_TURNS = 3;
-            const int REGEN_AMOUNT = 1;
+            const float REGEN_AMOUNT = 1.0f;
             if (data.turns_since_damage[i] > REGEN_DELAY_TURNS) {
-                int actual_regen_cap;
-                float current_health_percentage = static_cast<float>(data.health[i]) / data.max_health[i];
+                float actual_regen_cap;
+                float current_health_percentage = data.health[i] / data.max_health[i];
                 if (current_health_percentage >= 0.90f) actual_regen_cap = data.max_health[i];
-                else if (current_health_percentage >= 0.75f) actual_regen_cap = static_cast<int>(data.max_health[i] * 0.90f);
-                else if (current_health_percentage >= 0.50f) actual_regen_cap = static_cast<int>(data.max_health[i] * 0.75f);
-                else actual_regen_cap = static_cast<int>(data.max_health[i] * 0.60f);
+                else if (current_health_percentage >= 0.75f) actual_regen_cap = data.max_health[i] * 0.90f;
+                else if (current_health_percentage >= 0.50f) actual_regen_cap = data.max_health[i] * 0.75f;
+                else actual_regen_cap = data.max_health[i] * 0.60f;
                 if (data.health[i] < actual_regen_cap) {
                     data.health[i] += REGEN_AMOUNT;
                     data.health[i] = std::min(data.health[i], actual_regen_cap);
                 }
             }
-            data.energy[i] = std::max(0, data.energy[i]);
+            data.energy[i] = std::max(0.0f, data.energy[i]);
             data.energy[i] = std::min(data.energy[i], data.max_energy[i]);
         }
     }
@@ -282,7 +282,7 @@ namespace AISystem {
 
                 // --- Variables local to the loop iteration ---
                 // Use best_food_energy instead of best_food_amount
-                int best_food_energy = 0; // <-- Changed
+                float best_food_energy = 0.0f; // <-- Changed
                 int food_x = -1;
                 int food_y = -1;
                 int herd_size = 0;
@@ -294,26 +294,25 @@ namespace AISystem {
                         auto nearby_friends = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_BONUS_RADIUS, AnimalType::HERBIVORE);
                         herd_size = nearby_friends.size();
 
-                        int hp_bonus = (herd_size > 1) ? (herd_size - 1) * HERD_HP_BONUS_PER_MEMBER : 0;
-                        int old_max_health = data.max_health[i];
+                        float hp_bonus = (herd_size > 1) ? (herd_size - 1) * HERD_HP_BONUS_PER_MEMBER : 0.0f;
+                        float old_max_health = data.max_health[i];
                         data.max_health[i] = data.base_max_health[i] + hp_bonus;
                         if (data.max_health[i] > old_max_health) data.health[i] += (data.max_health[i] - old_max_health);
                         data.health[i] = std::min(data.health[i], data.max_health[i]);
 
                         // Decision Making
-                        auto predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
-                        auto omni_predators = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
+                        auto predators = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::CARNIVORE);
+                        auto omni_predators = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::OMNIVORE);
                         predators.insert(predators.end(), omni_predators.begin(), omni_predators.end());
                         if (!predators.empty()) {
                             data.state[i] = AIState::FLEEING; data.target_id[i] = predators[0]; continue;
                         }
 
                         // Seek Food if hungry - Prioritize by ENERGY
-                        if (data.energy[i] < static_cast<int>(data.max_energy[i] * HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
+                        if (data.energy[i] < data.max_energy[i] * HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE) {
                             // Use best_food_energy
-                            best_food_energy = 0; food_x = -1; food_y = -1; // Reset for this scan
-                            int scan_radius = data.current_sight_radius[i];
-                            (void)scan_radius;
+                            best_food_energy = 0.0f; food_x = -1; food_y = -1; // Reset for this scan
+                            int scan_radius = static_cast<int>(data.current_sight_radius[i]);
 
                             for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
                                     int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
@@ -321,7 +320,7 @@ namespace AISystem {
                                         const Tile& tile = world.getTile(check_x, check_y);
                                         // --- MODIFIED COMPARISON ---
                                         if (tile.resource_type) { // Ensure there is a resource type
-                                            int potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
+                                            float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
                                             if (potential_energy > best_food_energy) { // <-- Compare energy
                                                 best_food_energy = potential_energy; // <-- Store energy
                                                 food_x = check_x; food_y = check_y;
@@ -331,7 +330,7 @@ namespace AISystem {
                                 }
                             }
                             // Check if any food energy was found
-                            if (best_food_energy > 0) { // <-- Check energy > 0
+                            if (best_food_energy > 0.0f) { // <-- Check energy > 0
                                 data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
                             }
                         }
@@ -386,13 +385,13 @@ namespace AISystem {
 
 
                         // Old Priority 2 becomes NEW Priority 3: Hunt Herbivores
-                        auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::HERBIVORE);
+                        auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::HERBIVORE);
                         if (!nearby_herbivores.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
                         }
 
                         // Old Priority 3 becomes NEW Priority 4: Hunt lone or small groups of Omnivores
-                        auto nearby_omnivores_full_sight = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::OMNIVORE);
+                        auto nearby_omnivores_full_sight = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::OMNIVORE);
                         if (!nearby_omnivores_full_sight.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_omnivores_full_sight[0]; continue;
                         }
@@ -408,17 +407,16 @@ namespace AISystem {
                         if(nearby_carnivores_for_pack_check.size() >= OMNIVORE_PACK_HUNT_SIZE) {
                             data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_carnivores_for_pack_check[0]; continue;
                         }
-                        auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::HERBIVORE);
+                        auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::HERBIVORE);
                         if (!nearby_herbivores.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
                         }
 
                         // Seek Grass if hungry - Prioritize by ENERGY
-                        if (data.energy[i] < static_cast<int>(data.max_energy[i] * OMNIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE)) {
+                        if (data.energy[i] < data.max_energy[i] * OMNIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE) {
                             // Use best_food_energy
-                            best_food_energy = 0; food_x = -1; food_y = -1; // Reset for this scan
-                            int scan_radius = data.current_sight_radius[i];
-                            (void)scan_radius;
+                            best_food_energy = 0.0f; food_x = -1; food_y = -1; // Reset for this scan
+                            int scan_radius = static_cast<int>(data.current_sight_radius[i]);
 
                             for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
                                     int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
@@ -426,7 +424,7 @@ namespace AISystem {
                                         const Tile& tile = world.getTile(check_x, check_y);
                                         // --- MODIFIED COMPARISON ---
                                         if (tile.resource_type) { // Ensure there is a resource type
-                                            int potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
+                                            float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
                                             if (potential_energy > best_food_energy) { // <-- Compare energy
                                                 best_food_energy = potential_energy; // <-- Store energy
                                                 food_x = check_x; food_y = check_y;
@@ -436,12 +434,12 @@ namespace AISystem {
                                 }
                             }
                             // Check if any food energy was found
-                            if (best_food_energy > 0) { // <-- Check energy > 0
+                            if (best_food_energy > 0.0f) { // <-- Check energy > 0
                                 data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
                             }
                         }
 
-                        auto nearby_carnivores_for_hunt = world.getAnimalsNear(data, data.x[i], data.y[i], data.current_sight_radius[i], AnimalType::CARNIVORE);
+                        auto nearby_carnivores_for_hunt = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::CARNIVORE);
                         if (!nearby_carnivores_for_hunt.empty()) {
                             size_t potential_carnivore_target_id = nearby_carnivores_for_hunt[0];
                             if (potential_carnivore_target_id != (size_t)-1 && potential_carnivore_target_id < data.getEntityCount() && data.is_alive[potential_carnivore_target_id]) {
@@ -491,56 +489,56 @@ namespace ActionSystem {
                         if (dx <= 1 && dy <= 1)
                         {
                             // --- Attack ---
-                            int damage_to_deal = data.current_damage[i];
+                            float damage_to_deal = data.current_damage[i];
                             MetabolismSystem::applyDamage(data, target_entity_id, damage_to_deal);
 
                             // --- Energy Gain from Kill (if target died) ---
                             // Only gain energy if the target is dead AFTER this action.
                             // And only if the killer's type is NOT the same as the target's type (no cannibalism energy gain for territorial fights).
                             if (!data.is_alive[target_entity_id] && data.type[i] != data.type[target_entity_id]) {
-                                // Calculate nutritional value of the killed entity
-                                int target_age = data.age[target_entity_id];
-                                int target_base_nut = data.base_nutritional_value[target_entity_id];
-                                int target_prime_age = data.prime_age[target_entity_id];
-                                int target_penalty = data.penalty_per_year[target_entity_id];
-                                int target_min_value = data.minimum_nutritional_value[target_entity_id];
+                                // --- NEW: Nutritional Value Calculation ---
+                                int age_of_prey = data.age[target_entity_id];
+                                int prime_age_of_prey = data.prime_age[target_entity_id];
+                                float base_value = data.base_nutritional_value[target_entity_id];
+                                float penalty = data.penalty_per_year[target_entity_id];
+                                float min_value = data.minimum_nutritional_value[target_entity_id];
 
-                                int age_penalty = (target_age > target_prime_age) ? (target_age - target_prime_age) * target_penalty : 0;
-                                int energy_gained = std::max(target_min_value, target_base_nut - age_penalty);
+                                float nutritional_value = base_value;
+                                if (age_of_prey > prime_age_of_prey) {
+                                    nutritional_value -= (age_of_prey - prime_age_of_prey) * penalty;
+                                }
+                                nutritional_value = std::max(min_value, nutritional_value);
 
-                                // Add energy to the attacker, clamping at max
-                                data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
+                                data.energy[i] += nutritional_value;
+                                data.energy[i] = std::min(data.energy[i], data.max_energy[i]); // Cap energy
                             }
                         }
                     }
                 }
-                // --- End Combat Action ---
 
+                // --- Resource Consumption Action ---
+                if (current_state == AIState::SEEKING_FOOD) {
+                    int x = data.x[i];
+                    int y = data.y[i];
 
-                // --- Passive Resource Consumption ---
-                if (current_state != AIState::FLEEING && data.energy[i] < data.max_energy[i]) {
-                    Tile& current_tile = world.getTile(data.x[i], data.y[i]);
+                    // Check if the entity is on its target tile
+                    if (x == data.target_x[i] && y == data.target_y[i]) {
+                        Tile& tile = world.getTile(x, y);
 
-                    // State Change Logic: If we were seeking food and have arrived, stop seeking.
-                    // This MUST happen before consumption logic to prevent getting stuck.
-                    if (current_state == AIState::SEEKING_FOOD &&
-                        data.target_x[i] != -1 && data.target_y[i] != -1 &&
-                        data.x[i] == data.target_x[i] && data.y[i] == data.target_y[i])
-                    {
-                        data.state[i] = AIState::WANDERING;
-                        data.target_x[i] = -1; data.target_y[i] = -1;
-                        data.target_id[i] = (size_t)-1;
-                    }
+                        if (tile.resource_type && tile.getConsumableAmount() > 0.0f) {
+                            // Consume a fixed amount per turn, e.g., 1.0f unit of resource
+                            float amount_to_consume = 1.0f;
+                            float consumed = tile.consume(amount_to_consume);
+                            data.energy[i] += consumed * tile.resource_type->nutritional_value;
+                            data.energy[i] = std::min(data.energy[i], data.max_energy[i]); // Cap energy
 
-                    // Now, attempt to consume from the current tile
-                    if (current_tile.resource_type && current_tile.resource_amount > 0) {
-                        const int RESOURCE_CONSUMPTION_AMOUNT_REQUESTED = 5;
-                        int amount_consumed = current_tile.consume(RESOURCE_CONSUMPTION_AMOUNT_REQUESTED);
-                        int energy_gained = amount_consumed * current_tile.resource_type->nutritional_value;
-                        data.energy[i] = std::min(data.energy[i] + energy_gained, data.max_energy[i]);
+                            // If food is gone, go back to wandering
+                            if (tile.getConsumableAmount() <= 0.0f) {
+                                data.state[i] = AIState::WANDERING;
+                            }
+                        }
                     }
                 }
-                // --- End Passive Consumption ---
         } // End loop over entities
     } // End run function
 
@@ -549,79 +547,48 @@ namespace ActionSystem {
 namespace ReproductionSystem {
 
     void run(EntityManager& data) {
-        size_t num_entities_before_reproduction = data.getEntityCount(); // Process based on count *before* adding
-
-       // --- This loop is INTENTIONALLY SINGLE-THREADED ---
-        // Parallelizing this loop with a simple #pragma omp parallel for
-        // would introduce race conditions because calling data.create...()
-        // modifies the underlying vectors (push_back), which is not thread-safe
-        // if multiple threads do it concurrently.
-        // Collecting entities that reproduce and then creating them in a separate
-        // single-threaded step is possible, but adds complexity for a potentially
-        // small gain since reproduction events are less frequent than updates.
-        // For now, processing reproduction sequentially is safe.
-        for (size_t i = 0; i < num_entities_before_reproduction; ++i) {
+        size_t current_entity_count = data.getEntityCount(); // Cache count before adding new ones
+        for (size_t i = 0; i < current_entity_count; ++i) {
             if (!data.is_alive[i]) continue;
 
-            // Check if the entity meets reproduction criteria based on its type
-            bool can_reproduce = false;
-            int energy_cost = 0;
-            int required_energy = 0;
-            int required_age = 0;
+            float reproduce_energy_percentage = 0.0f;
+            int min_reproduce_age = 0;
+            float reproduce_cost = 0.0f;
 
             switch (data.type[i]) {
                 case AnimalType::HERBIVORE:
-                    required_energy = static_cast<int>(data.max_energy[i] * HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE);
-                    energy_cost = HERBIVORE_REPRODUCE_ENERGY_COST;
-                    required_age = HERBIVORE_MIN_REPRODUCE_AGE;
-                    if (data.energy[i] > required_energy && data.age[i] > required_age) {
-                        can_reproduce = true;
-                    }
+                    reproduce_energy_percentage = HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE;
+                    min_reproduce_age = HERBIVORE_MIN_REPRODUCE_AGE;
+                    reproduce_cost = HERBIVORE_REPRODUCE_ENERGY_COST;
                     break;
                 case AnimalType::CARNIVORE:
-                    required_energy = static_cast<int>(data.max_energy[i] * CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE);
-                    energy_cost = CARNIVORE_REPRODUCE_ENERGY_COST;
-                    required_age = CARNIVORE_MIN_REPRODUCE_AGE;
-                    if (data.energy[i] > required_energy && data.age[i] > required_age) {
-                        can_reproduce = true;
-                    }
+                    reproduce_energy_percentage = CARNIVORE_REPRODUCE_ENERGY_PERCENTAGE;
+                    min_reproduce_age = CARNIVORE_MIN_REPRODUCE_AGE;
+                    reproduce_cost = CARNIVORE_REPRODUCE_ENERGY_COST;
                     break;
                 case AnimalType::OMNIVORE:
-                    required_energy = static_cast<int>(data.max_energy[i] * OMNIVORE_REPRODUCE_ENERGY_PERCENTAGE);
-                    energy_cost = OMNIVORE_REPRODUCE_ENERGY_COST;
-                    required_age = OMNIVORE_MIN_REPRODUCE_AGE;
-                    if (data.energy[i] > required_energy && data.age[i] > required_age) {
-                        can_reproduce = true;
-                    }
-                    break;
-                default:
-                    // Unknown type, cannot reproduce
+                    reproduce_energy_percentage = OMNIVORE_REPRODUCE_ENERGY_PERCENTAGE;
+                    min_reproduce_age = OMNIVORE_MIN_REPRODUCE_AGE;
+                    reproduce_cost = OMNIVORE_REPRODUCE_ENERGY_COST;
                     break;
             }
 
-             // If capable, reproduce and deduct energy
-            if (can_reproduce) {
-                // Create the new entity using the appropriate helper function
-                // They are born at the parent's location.
+            if (data.age[i] > min_reproduce_age && data.energy[i] > data.max_energy[i] * reproduce_energy_percentage) {
+                data.energy[i] -= reproduce_cost;
+                // Create a new entity of the same type
                 switch (data.type[i]) {
-                case AnimalType::HERBIVORE:
-                    data.createHerbivore(data.x[i], data.y[i]);
-                    break;
-                case AnimalType::CARNIVORE:
-                    data.createCarnivore(data.x[i], data.y[i]);
-                    break;
-                case AnimalType::OMNIVORE:
-                    data.createOmnivore(data.x[i], data.y[i]);
-                    break;
-                default:
-                    // Should not happen due to can_reproduce check
-                    break;
+                    case AnimalType::HERBIVORE:
+                        data.createHerbivore(data.x[i], data.y[i]);
+                        break;
+                    case AnimalType::CARNIVORE:
+                        data.createCarnivore(data.x[i], data.y[i]);
+                        break;
+                    case AnimalType::OMNIVORE:
+                        data.createOmnivore(data.x[i], data.y[i]);
+                        break;
                 }
-
-                // Deduct energy cost from the parent AFTER the child is created
-                data.energy[i] = std::max(0, data.energy[i] - energy_cost); // Ensure energy doesn't go negative
             }
-        } // End loop over entities for reproduction
+        }
     } // End run function
 
 } // End namespace ReproductionSystem
