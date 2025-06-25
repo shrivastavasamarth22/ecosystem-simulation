@@ -113,12 +113,21 @@ namespace MovementSystem {
             int new_x = data.x[entity_id] + move_dx;
             int new_y = data.y[entity_id] + move_dy;
 
-            // Check world boundaries before updating position
-            if (new_x >= 0 && new_x < world.getWidth()) {
+            // Check world boundaries and only update if both coordinates are valid
+            // This prevents partial updates that can cause "teleporting" behavior
+            bool x_valid = (new_x >= 0 && new_x < world.getWidth());
+            bool y_valid = (new_y >= 0 && new_y < world.getHeight());
+            
+            if (x_valid) {
                 data.x[entity_id] = new_x;
             }
-            if (new_y >= 0 && new_y < world.getHeight()) {
+            if (y_valid) {
                 data.y[entity_id] = new_y;
+            }
+            
+            // If we can't move in either direction due to boundaries, stop trying
+            if (!x_valid && !y_valid) {
+                break;
             }
 
             // If we reached the target *during* this speed step, we can stop early
@@ -226,7 +235,9 @@ namespace MovementSystem {
                              moveTowards(data, i, world, target_x, target_y);
                          }
                      } else {
-                          // Target invalid - default to random movement. AI should fix state next turn.
+                          // Target invalid or dead - switch to wandering and clear target
+                         data.state[i] = AIState::WANDERING;
+                         data.target_id[i] = (size_t)-1;
                          moveRandom(data, i, world);
                      }
                  }
@@ -319,7 +330,7 @@ namespace AISystem {
                                     if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
                                         const Tile& tile = world.getTile(check_x, check_y);
                                         // --- MODIFIED COMPARISON ---
-                                        if (tile.resource_type) { // Ensure there is a resource type
+                                        if (tile.resource_type && tile.getConsumableAmount() > 0.0f) { // Ensure there is actually consumable food
                                             float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
                                             if (potential_energy > best_food_energy) { // <-- Compare energy
                                                 best_food_energy = potential_energy; // <-- Store energy
@@ -360,7 +371,11 @@ namespace AISystem {
                         // Priority 1: Flee from Omnivore packs
                         auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::OMNIVORE);
                         if(nearby_omnivores_for_pack_check.size() >= OMNIVORE_PACK_THREAT_SIZE) {
-                            data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_omnivores_for_pack_check[0]; continue;
+                            // Choose the closest omnivore as flee target
+                            size_t closest_omnivore = nearby_omnivores_for_pack_check[0];
+                            data.state[i] = AIState::FLEEING; 
+                            data.target_id[i] = closest_omnivore; 
+                            continue;
                         }
 
                         // --- NEW Priority 2: Confront Rival Carnivores ---
@@ -422,8 +437,8 @@ namespace AISystem {
                                     int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
                                     if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
                                         const Tile& tile = world.getTile(check_x, check_y);
-                                        // --- MODIFIED COMPARISON ---
-                                        if (tile.resource_type) { // Ensure there is a resource type
+                                        // --- FIXED: Check for actually consumable food ---
+                                        if (tile.resource_type && tile.getConsumableAmount() > 0.0f) { // Ensure there is actually consumable food
                                             float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
                                             if (potential_energy > best_food_energy) { // <-- Compare energy
                                                 best_food_energy = potential_energy; // <-- Store energy
@@ -442,10 +457,17 @@ namespace AISystem {
                         auto nearby_carnivores_for_hunt = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::CARNIVORE);
                         if (!nearby_carnivores_for_hunt.empty()) {
                             size_t potential_carnivore_target_id = nearby_carnivores_for_hunt[0];
-                            if (potential_carnivore_target_id != (size_t)-1 && potential_carnivore_target_id < data.getEntityCount() && data.is_alive[potential_carnivore_target_id]) {
+                            // Validate target is alive and within reasonable range
+                            if (potential_carnivore_target_id != (size_t)-1 && 
+                                potential_carnivore_target_id < data.getEntityCount() && 
+                                data.is_alive[potential_carnivore_target_id]) {
+                                
+                                // Check if we have enough allies near the target for pack hunting
                                 auto allies_near_target = world.getAnimalsNear(data, data.x[potential_carnivore_target_id], data.y[potential_carnivore_target_id], 2, AnimalType::OMNIVORE);
                                 if(allies_near_target.size() >= OMNIVORE_PACK_HUNT_SIZE) {
-                                    data.state[i] = AIState::PACK_HUNTING; data.target_id[i] = potential_carnivore_target_id; continue;
+                                    data.state[i] = AIState::PACK_HUNTING; 
+                                    data.target_id[i] = potential_carnivore_target_id; 
+                                    continue;
                                 }
                             }
                         }
@@ -479,6 +501,7 @@ namespace ActionSystem {
                 if (current_state == AIState::CHASING || current_state == AIState::PACK_HUNTING) {
                     size_t target_entity_id = data.target_id[i];
 
+                    // Validate target is still alive and valid
                     if (target_entity_id != (size_t)-1 && target_entity_id < data.getEntityCount() && data.is_alive[target_entity_id]) {
                         int dx = std::abs(data.x[i] - data.x[target_entity_id]);
                         int dy = std::abs(data.y[i] - data.y[target_entity_id]);
@@ -513,6 +536,10 @@ namespace ActionSystem {
                                 data.energy[i] = std::min(data.energy[i], data.max_energy[i]); // Cap energy
                             }
                         }
+                    } else {
+                        // Target is dead or invalid - switch to wandering and clear target
+                        data.state[i] = AIState::WANDERING;
+                        data.target_id[i] = (size_t)-1;
                     }
                 }
 
@@ -532,10 +559,17 @@ namespace ActionSystem {
                             data.energy[i] += consumed * tile.resource_type->nutritional_value;
                             data.energy[i] = std::min(data.energy[i], data.max_energy[i]); // Cap energy
 
-                            // If food is gone, go back to wandering
+                            // If food is gone, go back to wandering and clear target
                             if (tile.getConsumableAmount() <= 0.0f) {
                                 data.state[i] = AIState::WANDERING;
+                                data.target_x[i] = -1;
+                                data.target_y[i] = -1;
                             }
+                        } else {
+                            // Reached target but no food available - clear target and wander
+                            data.state[i] = AIState::WANDERING;
+                            data.target_x[i] = -1;
+                            data.target_y[i] = -1;
                         }
                     }
                 }
