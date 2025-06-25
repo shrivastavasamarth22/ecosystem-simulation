@@ -1,4 +1,5 @@
 #include "resources/Tile.h"
+#include "resources/Biome.h" // Include the full Biome definition
 
 int Tile::getConsumableAmount() const {
     // You can consume up to the current amount, up to a certain limit per turn if needed
@@ -11,6 +12,19 @@ int Tile::consume(int amount_requested) {
     resource_amount -= amount_consumed;
 
     return amount_consumed;
+}
+
+void Tile::setBiome(const BiomeType* type) {
+    biome_type = type;
+}
+
+const BiomeType* Tile::getBiome() const {
+    return biome_type;
+}
+
+void Tile::setResource(const ResourceType* type, int amount) {
+    resource_type = type;
+    resource_amount = amount;
 }
 
 void Tile::regrow() {

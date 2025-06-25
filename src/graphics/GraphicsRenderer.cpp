@@ -2,6 +2,7 @@
 #include "resources/Resource.h"
 #include "resources/Tile.h"
 #include "core/EntityManager.h"
+#include "resources/Biome.h"
 #include <iostream>
 
 // Define texture file paths
@@ -101,26 +102,33 @@ void GraphicsRenderer::drawWorld(const World& world) {
     for (int y = 0; y < world.getHeight(); ++y) {
         for (int x = 0; x < world.getWidth(); ++x) {
             const Tile& tile = world.getTile(x, y);
-            sf::Sprite tile_sprite;
 
-            if (tile.resource_type == nullptr || tile.resource_amount <= 0) {
-                tile_sprite.setTexture(m_empty_tile_texture);
-            } else {
+            // 1. Draw the base empty tile texture for the grid background
+            sf::Sprite background_sprite;
+            background_sprite.setTexture(m_empty_tile_texture);
+            background_sprite.setPosition(x * m_tile_size, y * m_tile_size);
+            sf::Vector2u texture_size_bg = background_sprite.getTexture()->getSize();
+            background_sprite.setScale(
+                static_cast<float>(m_tile_size) / texture_size_bg.x,
+                static_cast<float>(m_tile_size) / texture_size_bg.y
+            );
+            m_window.draw(background_sprite);
+
+            // 2. Draw the resource on top, if it exists
+            if (tile.resource_type != nullptr && tile.resource_amount > 0) {
+                sf::Sprite resource_sprite;
                 auto it = m_resource_tile_textures.find(tile.resource_type);
                 if (it != m_resource_tile_textures.end()) {
-                    tile_sprite.setTexture(it->second);
-                } else {
-                    tile_sprite.setTexture(m_empty_tile_texture);
+                    resource_sprite.setTexture(it->second);
+                    resource_sprite.setPosition(x * m_tile_size, y * m_tile_size);
+                    sf::Vector2u texture_size = resource_sprite.getTexture()->getSize();
+                    resource_sprite.setScale(
+                        static_cast<float>(m_tile_size) / texture_size.x,
+                        static_cast<float>(m_tile_size) / texture_size.y
+                    );
+                    m_window.draw(resource_sprite);
                 }
             }
-
-            tile_sprite.setPosition(x * m_tile_size, y * m_tile_size);
-            sf::Vector2u texture_size = tile_sprite.getTexture()->getSize();
-            tile_sprite.setScale(
-                static_cast<float>(m_tile_size) / texture_size.x,
-                static_cast<float>(m_tile_size) / texture_size.y
-            );
-            m_window.draw(tile_sprite);
         }
     }
 }

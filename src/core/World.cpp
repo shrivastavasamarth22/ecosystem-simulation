@@ -1,6 +1,7 @@
 #include "core/World.h"
 #include "resources/Resource.h"
 #include "resources/Tile.h"
+#include "resources/Biome.h"
 #include "systems/SimulationSystems.h"
 #include "common/AnimalConfig.h"
 #include "core/Random.h"
@@ -27,23 +28,10 @@ World::World(int w, int h, int cell_size)
 void World::init(int initial_herbivores, int initial_carnivores, int initial_omnivores) {
     m_entityManager.clear(); // Ensure the entity manager is empty
 
-    // --- Initialize Resources on the Grid (no changes here) ---
-    std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
-    std::uniform_int_distribution<int> dist_grass_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
-    std::uniform_int_distribution<int> dist_berry_amount(RESOURCE_BERRIES.max_amount / 2, RESOURCE_BERRIES.max_amount);
-
-    for (int r = 0; r < height; ++r) {
-        for (int c = 0; c < width; ++c) {
-            float chance = dist_chance(rng);
-            if (chance < 0.03f) { // 3% chance for Berries
-                    grid[r][c] = Tile(&RESOURCE_BERRIES, dist_berry_amount(rng));
-            } else if (chance < 0.17f) { // 17% chance for Grass
-                    grid[r][c] = Tile(&RESOURCE_GRASS, dist_grass_amount(rng));
-            } else { // 80% chance for empty
-                    grid[r][c] = Tile();
-            }
-        }
-    }
+    // --- NEW: Biome-based Terrain Generation ---
+    generateBiomes();
+    seedResources();
+    // --- END NEW ---
 
     // --- Initialize Animals using EntityManager ---
     std::uniform_int_distribution<int> distX(0, width - 1);
@@ -57,6 +45,82 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
     }
     for (int i = 0; i < initial_omnivores; ++i) {
         m_entityManager.createOmnivore(distX(rng), distY(rng));
+    }
+}
+
+void World::generateBiomes() {
+    // 1. Define Biome Seed Points
+    const int num_biome_seeds = 50; // More seeds = smaller, more numerous biomes
+    std::vector<std::pair<sf::Vector2i, const BiomeType*>> biome_seeds;
+
+    std::uniform_int_distribution<int> distX(0, width - 1);
+    std::uniform_int_distribution<int> distY(0, height - 1);
+    std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
+
+    for (int i = 0; i < num_biome_seeds; ++i) {
+        sf::Vector2i point(distX(rng), distY(rng));
+        float chance = dist_chance(rng);
+
+        const BiomeType* chosen_biome;
+        if (chance < 0.02f) { // 5% chance for Forest (rarest)
+            chosen_biome = &BIOME_FOREST;
+        } else if (chance < 0.30f) { // 40% chance for Grassland
+            chosen_biome = &BIOME_GRASSLAND;
+        } else { // 55% chance for Barren (most common)
+            chosen_biome = &BIOME_BARREN;
+        }
+        biome_seeds.push_back({point, chosen_biome});
+    }
+
+    // 2. Assign each tile to its nearest biome seed (Voronoi Diagram)
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            float min_dist_sq = -1.0f;
+            const BiomeType* closest_biome = nullptr;
+
+            for (const auto& seed : biome_seeds) {
+                float dist_sq = (seed.first.x - c) * (seed.first.x - c) + (seed.first.y - r) * (seed.first.y - r);
+                if (closest_biome == nullptr || dist_sq < min_dist_sq) {
+                    min_dist_sq = dist_sq;
+                    closest_biome = seed.second;
+                }
+            }
+            grid[r][c].setBiome(closest_biome);
+        }
+    }
+}
+
+void World::seedResources() {
+    std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
+    std::uniform_int_distribution<int> dist_grass_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
+    std::uniform_int_distribution<int> dist_berry_amount(RESOURCE_BERRIES.max_amount / 2, RESOURCE_BERRIES.max_amount);
+
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            const BiomeType* biome = grid[r][c].getBiome();
+            if (!biome) continue;
+
+            float chance = dist_chance(rng);
+            float cumulative_prob = 0.0f;
+
+            // Use the biome's resource distribution map
+            for (const auto& pair : biome->resource_distribution) {
+                const ResourceType* resource = pair.first;
+                float probability = pair.second;
+                cumulative_prob += probability;
+
+                if (chance < cumulative_prob) {
+                    int initial_amount = 0;
+                    if (resource == &RESOURCE_GRASS) {
+                        initial_amount = dist_grass_amount(rng);
+                    } else if (resource == &RESOURCE_BERRIES) {
+                        initial_amount = dist_berry_amount(rng);
+                    }
+                    grid[r][c].setResource(resource, initial_amount);
+                    break; // Move to the next tile once a resource is placed
+                }
+            }
+        }
     }
 }
 
@@ -88,7 +152,6 @@ void World::updateSpatialGrid() {
             }
         }
     }
-
 }
 
 void World::update() {

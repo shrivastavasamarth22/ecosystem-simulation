@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.6: Biome-Based Terrain Generation
+**Date:** June 2025
+### Major Features
+- **Procedural Biome Generation:** Overhauled the terrain generation system to use a Voronoi diagram-based approach, creating distinct and natural-looking biomes (Forest, Grassland, Barren).
+- **Data-Oriented Biome System:** Implemented a new data-oriented `Biome` system, where each biome type defines its own resource distribution and properties. This makes the system highly extensible for future terrain types.
+- **Strategic Resource Placement:** Resources are no longer placed randomly across the map. Instead, they are seeded based on the biome, creating resource-rich and resource-scarce areas that drive entity migration and conflict.
+
+### Technical Improvements
+- **Voronoi Diagrams:** Used a mathematical approach to generate irregular, non-grid-like biome shapes for a more organic world.
+- **Decoupled World Generation:** Separated biome generation from resource seeding, improving modularity and making the world initialization process cleaner.
+- **Extensible Design:** The new `Biome.h` and `Biome.cpp` files allow for easy addition of new biomes with unique characteristics without changing the core world generation logic.
+
 ## v2.5: Graphics System Refactor & Custom Cursor
 **Date:** June 2025
 ### Major Features

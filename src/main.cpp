@@ -12,7 +12,7 @@
 int main() {
     // ... (simulation parameters) ...
     const int WORLD_WIDTH = 160;
-    const int WORLD_HEIGHT = 90;
+    const int WORLD_HEIGHT = 90; 
     const int SPATIAL_GRID_CELL_SIZE = 15;
     const int INITIAL_HERBIVORES = 25;
     const int INITIAL_OMNIVORES = 10;

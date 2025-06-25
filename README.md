@@ -15,6 +15,7 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Multithreading (OpenMP):** Computation-heavy simulation systems (AI, Movement, Metabolism) are parallelized across multiple CPU cores for significant performance gains at high entity counts.
 - **System-Based Simulation Loop:** Simulation logic is organized into independent systems (AI, Movement, Action, Metabolism, Reproduction) that process entity data in batches within a carefully ordered main loop.
 - **Spatial Partitioning:** Uses a grid-based spatial partitioning (`World::spatial_grid`) for efficient, near O(1) neighbor finding (vs. O(N) in a simple list), drastically improving performance for perception and interaction systems.
+- **Biome-Based Terrain Generation:** The world is procedurally generated using a Voronoi diagram to create distinct, irregular biomes (Forest, Grassland, Barren). Each biome has a unique resource profile, influencing entity distribution and creating strategic points of interest.
 
 ### Entity Behavior & Survival
 - **Intelligent Agent Behavior:** Entities possess states processed by the AI System (`WANDERING`, `FLEEING`, `CHASING`, `PACK_HUNTING`, `HERDING`, `SEEKING_FOOD`).
@@ -62,7 +63,8 @@ ecosystem-simulation/
 │   │   └── SimulationSystems.cpp # AI, Movement, Action, Metabolism, Reproduction systems
 │   ├── resources/                # Resource and environment management
 │   │   ├── Resource.cpp         # Resource type definitions (Grass, Berries)
-│   │   └── Tile.cpp             # Individual grid tile management
+│   │   ├── Tile.cpp             # Individual grid tile management
+│   │   └── Biome.cpp            # Biome type definitions (Forest, Grassland, etc.)
 │   └── graphics/                 # Rendering and visualization
 │       ├── GraphicsRenderer.cpp # SFML window, textures, UI rendering
 │       ├── Camera.cpp           # Handles camera movement, zoom, and input

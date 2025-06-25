@@ -9,6 +9,7 @@
 #include "core/World.h"
 #include "core/EntityManager.h"
 #include "resources/Resource.h"
+#include "resources/Biome.h" // <-- NEW: Include Biome for texture mapping
 #include "common/AnimalTypes.h"
 #include "graphics/Camera.h"
 #include "graphics/UIManager.h"
@@ -36,6 +37,7 @@ private:
     int m_tile_size;
     sf::Texture m_empty_tile_texture;
     std::map<const ResourceType*, sf::Texture> m_resource_tile_textures;
+    std::map<const BiomeType*, sf::Texture> m_biome_tile_textures; // <-- NEW: For biome background colors
     std::map<AnimalType, sf::Texture> m_animal_textures;
     sf::Music m_background_music;
 

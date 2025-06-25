@@ -4,6 +4,7 @@
 #include "resources/Tile.h"
 #include "EntityManager.h"
 #include "common/AnimalTypes.h"
+#include "resources/Biome.h" // <-- Include Biome header
 #include <vector>
 #include <memory>
 #include <cmath>
@@ -33,6 +34,8 @@ class World {
     void cleanup(); // Will become m_entityManager.destroyDeadEntities() in the future
     void updateResources();
     void updateSpatialGrid();
+    void generateBiomes(); // <-- New terrain generation function
+    void seedResources();  // <-- New resource seeding function
 
     public:
     World(int w, int h, int cell_size = 15);
