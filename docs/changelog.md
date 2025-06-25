@@ -84,14 +84,14 @@
 - Added background music playback using SFML Audio for atmospheric enhancement
 
 ## v1.8: Multithreading Implementation
-**Date:** May 2025
+**Date:** June 2025
 - Integrated OpenMP for parallel processing of computation-heavy systems
 - Parallelized AI, Movement, and Metabolism systems for significant performance gains
 - Maintained single-threaded execution for thread-sensitive systems (Action, Reproduction, Cleanup)
 - Implemented proper synchronization and data dependency management
 
 ## v1.7: Data-Oriented Architecture
-**Date:** May 2025
+**Date:** June 2025
 - Major refactor to Data-Oriented Design replacing OOP Animal hierarchy
 - Implemented EntityManager with Structure of Arrays (SoA) pattern
 - Created System-based logic with SimulationSystems namespace
@@ -100,45 +100,45 @@
 - Removed dynamic_cast dependencies for improved performance
 
 ## v1.6: Resource System Integration
-**Date:** April 2025
+**Date:** June 2025
 - **Consumable Resources:** Introduced resources (Grass, Berries) on the grid with depletion and regrowth
 - **Food Seeking AI:** Herbivores/Omnivores now actively seek the highest-energy food sources when hungry
 - **Starvation Mechanics:** Implemented starvation death for realistic population control
 - **Modular Resources:** Resource types defined externally for easy expansion
 
 ## v1.5: Social & Territorial Behavior
-**Date:** April 2025
+**Date:** June 2025
 - **Herding Behavior:** Herbivores seek herds for dynamic Max HP bonus representing safety in numbers
 - **Basic Territoriality:** Carnivores fight other Carnivores within territorial radius
 - **Anti-Cannibalism:** No energy gain from territorial fights to prevent unrealistic behavior
 
 ## v1.4: Lifecycle Dynamics
-**Date:** March 2025
+**Date:** June 2025
 - **Aging System:** Entities grow weaker as they age, with species-specific aging rates
 - **Age-Based Nutritional Value:** Energy gained from kills depends on prey's age and type
 - **Dynamic Stats:** Age-related decline in speed, damage, and sight capabilities
 
 ## v1.3: Advanced Survival Mechanics
-**Date:** March 2025
+**Date:** June 2025
 - **Tiered Health Regeneration:** Multi-tiered healing system with permanent max HP reduction from severe injuries
 - **Hunger & Desperation System:** Low energy causes health drain but temporarily boosts combat stats
 - **Risk-Reward Mechanics:** Desperate entities become more dangerous but more vulnerable
 
 ## v1.2: Intelligent Agent AI
-**Date:** February 2025
+**Date:** June 2025
 - Reworked animal behavior from simple rules to state-driven AI (Finite State Machine)
 - Replaced energy-as-life with robust attribute system (Health, Damage, Speed, Sight)
 - Implemented sophisticated Fleeing and Chasing behaviors with target acquisition
 
 ## v1.1: Omnivore & Group Hunting
-**Date:** February 2025
+**Date:** June 2025
 - Added Omnivore species with complex hunting behavior
 - Implemented group hunting logic (Omnivores hunt Carnivores in packs)
 - Added pack fleeing behavior for Carnivores when outnumbered
 - Renamed Carnivore symbol from 'W' to 'C' for clarity
 
 ## v1.0: Initial Console Predator-Prey
-**Date:** January 2025
+**Date:** June 2025
 - Created basic console-based simulation with grid display
 - Implemented simple Herbivore and Carnivore species with random movement
 - Basic energy system with consumption and depletion mechanics
