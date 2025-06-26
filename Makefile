@@ -18,7 +18,11 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/core/World.cpp \
           $(SRC_DIR)/core/EntityManager.cpp \
           $(SRC_DIR)/core/Random.cpp \
-          $(SRC_DIR)/systems/SimulationSystems.cpp \
+          $(SRC_DIR)/systems/AISystem.cpp \
+          $(SRC_DIR)/systems/MovementSystem.cpp \
+          $(SRC_DIR)/systems/ActionSystem.cpp \
+          $(SRC_DIR)/systems/MetabolismSystem.cpp \
+          $(SRC_DIR)/systems/ReproductionSystem.cpp \
           $(SRC_DIR)/resources/Resource.cpp \
           $(SRC_DIR)/resources/Tile.cpp \
           $(SRC_DIR)/resources/Biome.cpp \
@@ -31,7 +35,11 @@ OBJECTS = $(BUILD_DIR)/main.o \
           $(BUILD_DIR)/World.o \
           $(BUILD_DIR)/EntityManager.o \
           $(BUILD_DIR)/Random.o \
-          $(BUILD_DIR)/SimulationSystems.o \
+          $(BUILD_DIR)/AISystem.o \
+          $(BUILD_DIR)/MovementSystem.o \
+          $(BUILD_DIR)/ActionSystem.o \
+          $(BUILD_DIR)/MetabolismSystem.o \
+          $(BUILD_DIR)/ReproductionSystem.o \
           $(BUILD_DIR)/Resource.o \
           $(BUILD_DIR)/Tile.o \
           $(BUILD_DIR)/Biome.o \
