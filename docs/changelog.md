@@ -1,6 +1,46 @@
 # Changelog
 
-## v2.7: Performance Optimization Suite
+## v2.9: Modular System Architecture & Critical Behavior Fixes
+**Date:** January 2025
+### Major Architecture Refactor
+- **Modular System Implementation:** Split the monolithic `SimulationSystems.cpp` into five independent system files for better maintainability and modularity:
+  - `AISystem.cpp/.h` - AI decision-making and behavior states
+  - `MovementSystem.cpp/.h` - Entity movement and pathfinding
+  - `ActionSystem.cpp/.h` - Combat, resource consumption, state transitions
+  - `MetabolismSystem.cpp/.h` - Aging, hunger, health regeneration
+  - `ReproductionSystem.cpp/.h` - Entity reproduction logic
+- **Enhanced Build System:** Updated Makefile to support the new modular architecture with proper dependency management
+- **Backward Compatibility:** Maintained `SimulationSystems.h` as an umbrella header for existing code compatibility
+
+### Critical Bug Fixes & Logic Improvements
+- **Race Condition Resolution:** Fixed critical herd bonus race condition by moving calculations to a single-threaded phase in the AI system
+  - Prevents data races in parallel execution while maintaining performance
+  - Ensures consistent and accurate herd bonus calculations
+  - Maintains thread safety without sacrificing multithreading benefits
+- **Pack Hunting Logic Fix:** Corrected omnivore pack hunting behavior to require allies near the hunter, not just near the target
+  - Creates more realistic coordinated pack behavior
+  - Prevents unrealistic "remote pack hunting" scenarios
+  - Improves strategic hunting mechanics
+- **Movement/AI State Conflict Resolution:** Eliminated state modification conflicts between systems
+  - Removed state changes from MovementSystem to prevent parallel conflicts
+  - Added comprehensive target validation in AISystem
+  - Improved system separation of concerns and reliability
+
+### Aging System Implementation
+- **Comprehensive Aging Penalties:** Implemented full aging system with progressive stat decline after prime age
+  - Damage, speed, and sight radius penalties using species-specific constants
+  - Realistic lifecycle dynamics where older entities become less effective
+  - Species-specific aging rates influence hunting strategies and population dynamics
+- **Enhanced Target Validation:** Added robust target validation across all systems to prevent processing dead entities
+
+### System Architecture Improvements
+- **Better Modularity:** Each system now has clear responsibilities and well-defined interfaces
+- **Improved Maintainability:** Easier to modify, debug, and extend individual systems
+- **Enhanced Performance:** Better cache locality and reduced coupling between systems
+- **Code Organization:** Cleaner separation of concerns with dedicated header files
+
+## v2.8: Performance Optimization Suite
+**Date:** June 2025
 **Date:** June 2025
 ### Major Performance Improvements
 - **View Frustum Culling:** Implemented advanced rendering optimization that only processes visible tiles and entities
@@ -24,7 +64,7 @@
 - **GPU Optimization:** Eliminated dynamic texture operations during rendering
 - **Cache Performance:** Better memory access patterns with appropriately-sized data structures
 
-## v2.8: Critical Behavior Fixes
+## v2.9: Critical Behavior Fixes
 **Date:** June 2025
 ### Major Bug Fixes
 - **Animal Behavior Loop Resolution:** Fixed critical infinite loops affecting herbivores and omnivores

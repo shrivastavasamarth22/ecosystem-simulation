@@ -12,8 +12,8 @@ Entities in this simulation perceive their world, actively seek out food resourc
 
 ### Foundational Architecture
 - **Data-Oriented Design (DOD):** Core simulation logic operates directly on attribute data stored in contiguous arrays (`EntityManager`), optimizing for cache efficiency.
-- **Multithreading (OpenMP):** Computation-heavy simulation systems (AI, Movement, Metabolism) are parallelized across multiple CPU cores for significant performance gains at high entity counts.
-- **System-Based Simulation Loop:** Simulation logic is organized into independent systems (AI, Movement, Action, Metabolism, Reproduction) that process entity data in batches within a carefully ordered main loop.
+- **Modular System Architecture:** Simulation logic is organized into 5 independent, focused systems (AI, Movement, Action, Metabolism, Reproduction) that process entity data in batches within a carefully ordered main loop. Each system has its own dedicated `.cpp` and `.h` files for better maintainability and modularity.
+- **Multithreading (OpenMP):** Computation-heavy simulation systems (AI, Movement, Metabolism) are parallelized across multiple CPU cores for significant performance gains at high entity counts, with thread-safe execution and proper race condition prevention.
 - **Dynamic Spatial Partitioning:** Uses an auto-optimizing grid-based spatial partitioning (`World::spatial_grid`) that calculates optimal cell sizes based on world dimensions and entity density for efficient, near O(1) neighbor finding.
 - **View Frustum Culling:** Advanced rendering optimization that only processes visible tiles and entities, providing dramatic performance improvements for large worlds (80-95% rendering speedup when zoomed in).
 - **Optimized Asset Pipeline:** Uses appropriately-sized textures (40×40 for tiles, 64×64 for entities) with fixed scaling factors to minimize GPU memory usage and eliminate dynamic scaling overhead.
@@ -24,14 +24,14 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Dynamic Attribute System:** Every entity has stats for **Health (HP), Damage, Speed, and Sight Radius**. These stats change dynamically based on hunger levels and aging effects.
 - **Hunger & Desperation System:** Low energy triggers a high-risk, high-reward "desperation mode," temporarily boosting an entity's combat and movement stats at the cost of health drain, forcing a desperate search for food.
 - **Tiered Health Regeneration:** Entities can recover HP over time if they avoid damage, but severe injuries (tiers of health below max) permanently lower their maximum health cap, reflecting lasting injury.
-- **Aging System:** As entities grow older, their base stats (like speed, damage, sight) decline, making them less effective and more vulnerable. The rate and impact of aging differ by species, being more pronounced in predators.
+- **Comprehensive Aging System:** As entities grow older, their base stats (like speed, damage, sight) decline progressively after their prime age using dedicated aging penalties. This creates realistic lifecycle dynamics where older entities become less effective and more vulnerable, with species-specific aging rates that influence hunting strategies and population dynamics.
 
 ### Ecological & Social Dynamics
 - **Resource System:** The world grid contains consumable, regenerating resources (starting with "Grass" and "Berries"). Entities must actively seek out specific resource types and consume them via the Action System to gain energy based on the resource's nutritional value. Over-consumption leads to local depletion, driving migration and starvation.
 - **Age-Based Nutritional Value:** The energy gained from a kill is dynamically calculated based on the age and type of the killed entity, making older, weaker ones a lower-reward target and influencing predator hunting strategies.
-- **Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out others of their kind to form groups.
+- **Advanced Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out others of their kind to form groups. Herd bonus calculations are processed in a thread-safe manner to prevent race conditions while maintaining performance.
 - **Herd Health Bonus:** Being in a herd grants a dynamic bonus to Max HP, representing "safety in numbers" and making herd members tougher targets for predators.
-- **Strategic Hunting:** Carnivore entities hunt Herbivores (primary prey) or strategically hunt lone/small groups of Omnivores if they are not in a threatening pack size (`CHASING` state). Omnivores hunt Herbivores and can form packs to hunt powerful Carnivores (`PACK_HUNTING` state).
+- **Strategic Hunting:** Carnivore entities hunt Herbivores (primary prey) or strategically hunt lone/small groups of Omnivores if they are not in a threatening pack size (`CHASING` state). Omnivores hunt Herbivores and can form coordinated packs to hunt powerful Carnivores (`PACK_HUNTING` state), with improved ally detection logic.
 - **Basic Territorial Behavior:** Carnivores exhibit territoriality and will engage in lethal combat (`CHASING` state leading to combat) with other Carnivores that enter their territorial radius. Cannibalism does not provide energy gain in territorial fights.
 - **Natural Population Control:** Complex interactions between resource availability, predator-prey relationships, aging, hunger, and intra-species conflict provide dynamic mechanisms for population booms, busts, and cycles.
 
@@ -61,8 +61,12 @@ ecosystem-simulation/
 │   │   ├── World.cpp            # Manages grid, spatial partitioning, orchestrates system execution
 │   │   ├── EntityManager.cpp    # Central data store (SoA) and entity lifecycle management
 │   │   └── Random.cpp           # Global random number generator
-│   ├── systems/                  # Simulation systems
-│   │   └── SimulationSystems.cpp # AI, Movement, Action, Metabolism, Reproduction systems
+│   ├── systems/                  # Modular simulation systems
+│   │   ├── AISystem.cpp         # AI decision-making and behavior states
+│   │   ├── MovementSystem.cpp   # Entity movement and pathfinding
+│   │   ├── ActionSystem.cpp     # Combat, resource consumption, state transitions
+│   │   ├── MetabolismSystem.cpp # Aging, hunger, health regeneration
+│   │   └── ReproductionSystem.cpp # Entity reproduction logic
 │   ├── resources/                # Resource and environment management
 │   │   ├── Resource.cpp         # Resource type definitions (Grass, Berries)
 │   │   ├── Tile.cpp             # Individual grid tile management
@@ -74,7 +78,13 @@ ecosystem-simulation/
 │
 ├── include/                      # Header files
 │   ├── core/                     # Core component headers
-│   ├── systems/                  # System headers
+│   ├── systems/                  # Individual system headers
+│   │   ├── AISystem.h           # AI system interface
+│   │   ├── MovementSystem.h     # Movement system interface
+│   │   ├── ActionSystem.h       # Action system interface
+│   │   ├── MetabolismSystem.h   # Metabolism system interface
+│   │   ├── ReproductionSystem.h # Reproduction system interface
+│   │   └── SimulationSystems.h  # Umbrella header (backward compatibility)
 │   ├── resources/                # Resource headers
 │   ├── graphics/                 # Graphics headers
 │       ├── GraphicsRenderer.h # Main renderer class
@@ -199,6 +209,14 @@ Initial population counts, world size, spatial grid cell size, and simulation sp
     - **Dynamic Spatial Grid:** Added auto-calculating optimal spatial grid cell size based on world dimensions and entity density, improving AI performance by 30-50%
     - **Texture Optimization:** Resized all textures from 1024×1024/500×500 to optimal sizes (40×40 for tiles, 64×64 for entities), reducing memory usage by 95% and eliminating scaling overhead
     - **Enhanced Rendering Pipeline:** Optimized sprite scaling with fixed scale factors, removed dynamic texture size queries for better GPU performance
+- **v2.7: Modular System Architecture & Critical Behavior Fixes**
+    - **Modular System Refactor:** Split the monolithic `SimulationSystems.cpp` into five independent system files (`AISystem.cpp`, `MovementSystem.cpp`, `ActionSystem.cpp`, `MetabolismSystem.cpp`, `ReproductionSystem.cpp`) with corresponding headers for better maintainability and modularity.
+    - **Critical Race Condition Fixes:** Resolved herd bonus race condition by moving calculations to a single-threaded phase in the AI system, ensuring thread-safe execution without performance degradation.
+    - **Pack Hunting Logic Fix:** Fixed omnivore pack hunting to require allies near the hunter rather than just near the target, creating more realistic and coordinated pack behavior.
+    - **Movement/AI State Conflict Resolution:** Eliminated state modification conflicts between Movement and AI systems by removing state changes from the Movement system and adding proper target validation in the AI system.
+    - **Aging System Implementation:** Implemented comprehensive aging penalties for damage, speed, and sight radius after prime age, using species-specific constants from `AnimalConfig.h` for realistic lifecycle dynamics.
+    - **Enhanced Target Validation:** Added robust target validation across all systems to prevent chasing dead entities and improve system reliability.
+    - **Updated Build System:** Modified Makefile to support the new modular system architecture with proper dependency management.
 - **v2.6: Critical Behavior Fixes**
     - **Fixed Animal Behavior Loops:** Resolved infinite loops where herbivores and omnivores repeatedly targeted depleted food sources
     - **Dead Target Cleanup:** Enhanced target validation across all systems to prevent chasing dead entities

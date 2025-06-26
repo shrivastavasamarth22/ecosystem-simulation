@@ -13,13 +13,25 @@ This ecosystem simulation uses a **Data-Oriented Design (DOD)** architecture wit
 - Optimized for parallel processing across multiple systems
 
 ### System-Based Processing
-The simulation uses 5 main systems that process entities in a specific order:
+The simulation uses 5 main systems that process entities in a specific order, each implemented as a separate module:
 
-1. **AI System** - Determines entity behavior states and targets (parallelized)
-2. **Movement System** - Handles entity movement with diagonal pathfinding (parallelized)
-3. **Action System** - Processes combat, resource consumption, state transitions (sequential)
-4. **Metabolism System** - Handles aging, hunger, health regeneration (parallelized)
-5. **Reproduction System** - Manages entity reproduction (sequential)
+1. **AI System** (`AISystem.cpp/.h`) - Determines entity behavior states and targets (parallelized)
+   - Handles target validation and state transitions
+   - Manages herd bonus calculations in thread-safe manner
+   - Implements pack hunting logic with proper ally detection
+2. **Movement System** (`MovementSystem.cpp/.h`) - Handles entity movement with diagonal pathfinding (parallelized)
+   - Focuses purely on movement without state modification
+   - Clears invalid targets and switches to wandering when needed
+   - Maintains separation from AI decision-making
+3. **Action System** (`ActionSystem.cpp/.h`) - Processes combat, resource consumption, state transitions (sequential)
+   - Thread-sensitive operations requiring sequential execution
+   - Handles all entity interactions and state changes
+4. **Metabolism System** (`MetabolismSystem.cpp/.h`) - Handles aging, hunger, health regeneration (parallelized)
+   - Implements comprehensive aging penalties for stats after prime age
+   - Uses species-specific constants for realistic lifecycle dynamics
+   - Manages health regeneration and energy consumption
+5. **Reproduction System** (`ReproductionSystem.cpp/.h`) - Manages entity reproduction (sequential)
+   - Handles entity creation and population dynamics
 
 ### Graphics & Rendering System
 - **SFML-based rendering** with texture management and sprite drawing
@@ -59,10 +71,16 @@ Input Events → Event Handler → Camera System Updates → Rendering System �
 
 ## Directory Structure
 - `src/core/` - Core simulation components (World, EntityManager, Random)
-- `src/systems/` - System implementations with parallelization
+- `src/systems/` - Individual system implementations with dedicated files for each system
+  - `AISystem.cpp` - AI decision-making and behavior management
+  - `MovementSystem.cpp` - Entity movement and pathfinding logic
+  - `ActionSystem.cpp` - Combat and resource interaction processing
+  - `MetabolismSystem.cpp` - Aging, hunger, and health management
+  - `ReproductionSystem.cpp` - Entity reproduction and lifecycle
 - `src/resources/` - Resource and environment management
 - `src/graphics/` - Rendering, camera system, and UI management
 - `include/` - Header files organized by component type
+  - `include/systems/` - Individual system headers with clear interfaces
 - `external/` - Third-party libraries (SFML)
 - `assets/` - Game assets (textures, fonts, audio)
 - `build/` - Compiled object files and build artifacts
@@ -77,7 +95,12 @@ Input Events → Event Handler → Camera System Updates → Rendering System �
 - **Memory pre-allocation** reduces dynamic allocations in spatial grid and rendering systems
 - **Smooth interpolation** provides responsive user experience without performance cost
 
-## Recent Performance Optimizations (v2.5-v2.6)
+## Recent Performance Optimizations (v2.8-v2.9)
+- **Modular System Architecture**: Split monolithic systems into dedicated modules for better maintainability
+- **Race Condition Fixes**: Resolved critical threading issues in herd bonus calculations and pack hunting
+- **Aging System Implementation**: Added comprehensive aging penalties with species-specific decline rates
+- **Movement/AI Separation**: Improved system boundaries to prevent state conflicts in parallel execution
+- **Enhanced Target Validation**: Robust validation across all systems prevents processing of invalid entities
 - **Rendering Pipeline**: Implemented view frustum culling and optimized texture scaling
 - **Spatial Grid**: Added auto-calculating optimal cell sizes and memory pre-allocation
 - **Asset Management**: Resized textures from 1024×1024 to optimal sizes, reducing memory by 95%
