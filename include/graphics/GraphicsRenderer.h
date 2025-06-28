@@ -21,16 +21,20 @@ public:
 
     void init(unsigned int window_width, unsigned int window_height, int world_width, int world_height, int tile_size, const std::string& title);
     bool isOpen() const;
-    void handleEvents();
+    void handleEvents(const EntityManager* entityManager = nullptr);
     void clear(const sf::Color& color = sf::Color::Black);
     void display();
     void update(float delta_time);
 
     void drawWorld(const World& world);
     void drawEntities(const EntityManager& entityManager, float animation_progress);
+    void drawSelectionIndicator(const EntityManager& entityManager, float animation_progress);
     void drawUI(const World& world, bool is_paused);
     void drawSimulationEndedMessage();
     void drawCursor();
+    
+    // Camera access for selection management
+    Camera* getCamera() const;
 
 private:
     // Helper method for view frustum culling

@@ -75,14 +75,14 @@ bool GraphicsRenderer::isOpen() const {
     return m_window.isOpen();
 }
 
-void GraphicsRenderer::handleEvents() {
+void GraphicsRenderer::handleEvents(const EntityManager* entityManager) {
     sf::Event event;
     while (m_window.pollEvent(event)) {
         if (event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
             m_window.close();
         }
         
-        m_camera->handleEvent(event, m_window);
+        m_camera->handleEvent(event, m_window, entityManager);
     }
 }
 
@@ -196,6 +196,48 @@ void GraphicsRenderer::drawCursor() {
     m_ui_manager->drawCursor(m_window);
 }
 
+void GraphicsRenderer::drawSelectionIndicator(const EntityManager& entityManager, float animation_progress) {
+    if (!m_camera->hasSelectedEntity()) {
+        return;
+    }
+    
+    size_t selected_id = m_camera->getSelectedEntity();
+    
+    // Validate that the selected entity still exists
+    if (selected_id >= entityManager.getEntityCount() || !entityManager.is_alive[selected_id]) {
+        // Entity no longer exists, clear selection
+        m_camera->clearSelection();
+        return;
+    }
+    
+    m_window.setView(m_camera->getView());
+    
+    // Calculate interpolated position (same as in drawEntities)
+    float eased_progress = 1.0f - (1.0f - animation_progress) * (1.0f - animation_progress);
+    
+    float prev_pixel_x = entityManager.prev_x[selected_id] * m_tile_size;
+    float prev_pixel_y = entityManager.prev_y[selected_id] * m_tile_size;
+    float current_pixel_x = entityManager.x[selected_id] * m_tile_size;
+    float current_pixel_y = entityManager.y[selected_id] * m_tile_size;
+    
+    float interp_x = prev_pixel_x + (current_pixel_x - prev_pixel_x) * eased_progress;
+    float interp_y = prev_pixel_y + (current_pixel_y - prev_pixel_y) * eased_progress;
+    
+    // Draw selection circle
+    sf::CircleShape selection_circle;
+    float radius = m_tile_size * 0.8f; // Slightly larger than entity
+    selection_circle.setRadius(radius);
+    selection_circle.setOrigin(radius, radius); // Center the circle
+    selection_circle.setPosition(interp_x + m_tile_size / 2.0f, interp_y + m_tile_size / 2.0f);
+    
+    // Yellow circle with transparent fill
+    selection_circle.setFillColor(sf::Color::Transparent);
+    selection_circle.setOutlineColor(sf::Color::Yellow);
+    selection_circle.setOutlineThickness(2.0f);
+    
+    m_window.draw(selection_circle);
+}
+
 sf::FloatRect GraphicsRenderer::getVisibleBounds() const {
     sf::View current_view = m_camera->getView();
     sf::Vector2f center = current_view.getCenter();
@@ -207,4 +249,8 @@ sf::FloatRect GraphicsRenderer::getVisibleBounds() const {
         size.x,
         size.y
     );
+}
+
+Camera* GraphicsRenderer::getCamera() const {
+    return m_camera.get();
 }

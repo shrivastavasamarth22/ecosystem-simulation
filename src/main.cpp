@@ -54,7 +54,7 @@ int main() {
     // --- Main SFML Window Loop ---
     while (renderer.isOpen()) {
         // Handle window events (closing)
-        renderer.handleEvents();
+        renderer.handleEvents(&world.getEntityManager());
 
         // --- Handle Pause Input ---
         bool is_p_currently_pressed = sf::Keyboard::isKeyPressed(sf::Keyboard::P);
@@ -102,6 +102,7 @@ int main() {
 
         renderer.drawWorld(world);
         renderer.drawEntities(world.getEntityManager(), animation_progress);
+        renderer.drawSelectionIndicator(world.getEntityManager(), animation_progress);
         renderer.drawUI(world, is_paused);
 
         // Draw simulation ended message if simulation has ended

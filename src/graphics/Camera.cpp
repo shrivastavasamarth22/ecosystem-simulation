@@ -1,13 +1,17 @@
 #include "graphics/Camera.h"
+#include "core/EntityManager.h"
 #include <algorithm>
+#include <cmath>
 
-Camera::Camera(unsigned int window_width, unsigned int window_height, int world_width, int world_height, int tile_size) {
+Camera::Camera(unsigned int window_width, unsigned int window_height, int world_width, int world_height, int tile_size) 
+    : m_selected_entity(INVALID_ENTITY), m_has_selection(false) {
     initialize(window_width, window_height, world_width, world_height, tile_size);
 }
 
 void Camera::initialize(unsigned int window_width, unsigned int window_height, int world_width, int world_height, int tile_size) {
     m_window_width = window_width;
     m_window_height = window_height;
+    m_tile_size = tile_size;
 
     float world_pixel_width = world_width * tile_size;
     float world_pixel_height = world_height * tile_size;
@@ -39,7 +43,7 @@ void Camera::pan(const sf::Vector2f& delta) {
     updateView();
 }
 
-void Camera::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
+void Camera::handleEvent(const sf::Event& event, sf::RenderWindow& window, const EntityManager* entityManager) {
     if (event.type == sf::Event::MouseWheelScrolled) {
         if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
             float zoom_factor = (event.mouseWheelScroll.delta > 0) ? 0.9f : 1.1f;
@@ -50,6 +54,24 @@ void Camera::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
 
     if (event.type == sf::Event::MouseButtonPressed) {
         if (event.mouseButton.button == sf::Mouse::Left) {
+            // Check for entity selection before starting drag
+            if (entityManager) {
+                sf::Vector2i mouse_pos = sf::Mouse::getPosition(window);
+                sf::Vector2f world_pos = window.mapPixelToCoords(mouse_pos, m_view);
+                
+                size_t clicked_entity = findEntityAtPosition(world_pos, entityManager);
+                if (clicked_entity != INVALID_ENTITY) {
+                    // Entity clicked - select it
+                    m_selected_entity = clicked_entity;
+                    m_has_selection = true;
+                    return; // Don't start dragging when selecting an entity
+                } else {
+                    // Empty space clicked - clear selection
+                    clearSelection();
+                }
+            }
+            
+            // Start dragging if no entity was selected
             m_is_dragging = true;
             m_last_mouse_pos = sf::Mouse::getPosition(window);
         }
@@ -139,4 +161,55 @@ void Camera::smoothZoom(float delta_time) {
         float zoom_speed = 5.0f;
         m_zoom_level += (m_target_zoom_level - m_zoom_level) * zoom_speed * delta_time;
     }
+}
+
+// Entity selection methods
+size_t Camera::getSelectedEntity() const {
+    return m_selected_entity;
+}
+
+bool Camera::hasSelectedEntity() const {
+    return m_has_selection;
+}
+
+void Camera::clearSelection() {
+    m_selected_entity = INVALID_ENTITY;
+    m_has_selection = false;
+}
+
+size_t Camera::findEntityAtPosition(const sf::Vector2f& world_pos, const EntityManager* entityManager) const {
+    if (!entityManager) {
+        return INVALID_ENTITY;
+    }
+    
+    // Convert world pixel position to tile coordinates
+    float tile_x = world_pos.x / m_tile_size;
+    float tile_y = world_pos.y / m_tile_size;
+    
+    // Selection radius in tiles (allows some tolerance for clicking)
+    float selection_radius = 0.5f;
+    
+    // Find the closest entity within selection radius
+    size_t closest_entity = INVALID_ENTITY;
+    float closest_distance = selection_radius;
+    
+    for (size_t i = 0; i < entityManager->getEntityCount(); ++i) {
+        if (!entityManager->is_alive[i]) {
+            continue;
+        }
+        
+        float entity_x = static_cast<float>(entityManager->x[i]);
+        float entity_y = static_cast<float>(entityManager->y[i]);
+        
+        float dx = tile_x - entity_x;
+        float dy = tile_y - entity_y;
+        float distance = std::sqrt(dx * dx + dy * dy);
+        
+        if (distance < closest_distance) {
+            closest_distance = distance;
+            closest_entity = i;
+        }
+    }
+    
+    return closest_entity;
 }
