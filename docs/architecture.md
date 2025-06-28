@@ -1,7 +1,7 @@
 # Project Architecture
 
 ## Overview
-This ecosystem simulation uses a **Data-Oriented Design (DOD)** architecture with system-based processing for high performance and scalability. The project features a sophisticated graphics rendering system with interactive camera controls and comprehensive UI management.
+This ecosystem simulation uses a **Data-Oriented Design (DOD)** architecture with system-based processing for high performance and scalability. The project features a sophisticated graphics rendering system with interactive camera controls, comprehensive UI management, and professional-grade animation interpolation.
 
 ## Core Architecture Components
 
@@ -9,12 +9,17 @@ This ecosystem simulation uses a **Data-Oriented Design (DOD)** architecture wit
 - **Structure of Arrays** design for cache-efficient data access
 - Stores all entity attributes in separate vectors
 - Manages entity lifecycle with fast swap-and-pop deletion
-- Contains 25+ different attributes per entity
+- Contains 25+ different attributes per entity including animation state (`prev_x`, `prev_y`)
 - Optimized for parallel processing across multiple systems
+- **Animation State Management**: Properly initializes previous positions for newly created entities to prevent visual artifacts
 
 ### System-Based Processing
-The simulation uses 5 main systems that process entities in a specific order, each implemented as a separate module:
+The simulation uses 6 main systems that process entities in a specific order, each implemented as a separate module:
 
+0. **Animation System** (`AnimationSystem.cpp/.h`) - Captures position state before simulation updates (parallelized)
+   - Stores current positions as previous positions for next frame's interpolation
+   - Ensures smooth visual transitions between simulation turns
+   - Prevents newly created entities from appearing to "teleport" from origin
 1. **AI System** (`AISystem.cpp/.h`) - Determines entity behavior states and targets (parallelized)
    - Handles target validation and state transitions
    - Manages herd bonus calculations in thread-safe manner
@@ -32,6 +37,7 @@ The simulation uses 5 main systems that process entities in a specific order, ea
    - Manages health regeneration and energy consumption
 5. **Reproduction System** (`ReproductionSystem.cpp/.h`) - Manages entity reproduction (sequential)
    - Handles entity creation and population dynamics
+   - Properly initializes animation state for newly created entities
 
 ### Graphics & Rendering System
 - **SFML-based rendering** with texture management and sprite drawing
@@ -39,6 +45,15 @@ The simulation uses 5 main systems that process entities in a specific order, ea
 - **Enhanced UI system** with sprite-based counters and semi-transparent backgrounds
 - **Asset management** for textures, fonts, and audio files
 - **View separation** between world rendering (camera view) and UI overlay (fixed view)
+- **Animation Interpolation**: Smooth position interpolation with quadratic easing for professional visual quality
+
+### Animation System Architecture
+- **Position State Capture**: Stores entity positions before each simulation update
+- **Interpolation Engine**: Calculates smooth transitions between previous and current positions
+- **Quadratic Easing**: Natural acceleration/deceleration curves for realistic movement
+- **Performance Optimization**: Parallel position capture with minimal overhead
+- **Entity Lifecycle Support**: Proper animation state for newly created and destroyed entities
+- **Frame Rate Independence**: Smooth 60fps animation regardless of simulation speed
 
 ### Camera System Architecture
 - **Smooth zoom** with configurable speed and intelligent bounds

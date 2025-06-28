@@ -1,5 +1,51 @@
 # Changelog
 
+## v2.11: Animation System & Reproduction Bug Fixes
+**Date:** June 2025
+### Animation System Implementation
+- **Smooth Animation System:** Implemented professional-grade position interpolation with quadratic easing
+  - Added dedicated `AnimationSystem.cpp/.h` module for position state management
+  - Captures previous positions before each simulation update for smooth transitions
+  - Quadratic easing curves provide natural acceleration/deceleration for realistic movement
+  - 60fps visual smoothness maintained independently of simulation speed
+  - Parallel position capture with minimal performance overhead
+- **Animation State Architecture:** Integrated animation state into entity lifecycle management
+  - Added `prev_x` and `prev_y` attributes to EntityManager for interpolation data
+  - Animation system runs as System 0 before all other simulation logic
+  - Frame-rate independent interpolation for consistent visual experience
+  - Professional visual polish eliminates jerky movement between simulation turns
+
+### Critical Bug Fixes
+- **Reproduction Animation Fix:** Resolved critical "teleporting herbivores" visual bug
+  - **Root Cause:** Newly reproduced entities had `prev_x` and `prev_y` initialized to (0,0)
+  - **Symptom:** New entities appeared to teleport from map origin to spawn location
+  - **Solution:** Initialize `prev_x` and `prev_y` to spawn position in all entity creation functions
+  - **Impact:** Eliminates visual artifacts for newly created entities across all species
+- **Entity Creation State:** Enhanced all entity creation functions in `EntityManager`
+  - `createHerbivore()`, `createCarnivore()`, and `createOmnivore()` now properly initialize animation state
+  - Prevents interpolation from invalid previous positions for smooth entity spawning
+  - Maintains visual consistency throughout entity lifecycle from creation to destruction
+
+### System Integration Improvements
+- **Animation-Rendering Pipeline:** Seamless integration between animation system and graphics renderer
+  - `GraphicsRenderer` uses interpolated positions for smooth entity drawing
+  - Animation interpolation factor calculated from frame timing for precise movement
+  - Maintains simulation logic separation from visual presentation
+- **Performance Optimization:** Animation system designed for high-performance execution
+  - Position capture parallelized across all entities using OpenMP
+  - Minimal memory overhead with efficient data structure usage
+  - No impact on simulation speed while providing dramatic visual improvement
+
+### Technical Implementation Details
+- **Modular Design:** Animation system follows established system architecture patterns
+  - Clean separation of concerns with dedicated header/implementation files
+  - Thread-safe parallel execution compatible with existing multithreading
+  - Easy to extend for future animation features (rotation, scaling, etc.)
+- **Data-Oriented Integration:** Animation state integrated into SoA (Structure of Arrays) pattern
+  - Previous position data stored efficiently alongside other entity attributes
+  - Cache-friendly access patterns for optimal performance during parallel processing
+  - Maintains data locality benefits of existing EntityManager design
+
 ## v2.10: Advanced AI Behavior & System Reliability Improvements
 **Date:** January 2025
 ### Major AI & Behavioral Enhancements

@@ -156,6 +156,9 @@ size_t EntityManager::createHerbivore(int start_x, int start_y) {
     type[id] = AnimalType::HERBIVORE;
     x[id] = start_x;
     y[id] = start_y;
+    // Set previous positions to current positions to prevent animation interpolation from (0,0)
+    prev_x[id] = start_x;
+    prev_y[id] = start_y;
     
     base_max_health[id] = HERBIVORE_BASE_HP;
     max_health[id] = HERBIVORE_BASE_HP;
@@ -180,6 +183,9 @@ size_t EntityManager::createCarnivore(int start_x, int start_y) {
     type[id] = AnimalType::CARNIVORE;
     x[id] = start_x;
     y[id] = start_y;
+    // Set previous positions to current positions to prevent animation interpolation from (0,0)
+    prev_x[id] = start_x;
+    prev_y[id] = start_y;
 
     base_max_health[id] = CARNIVORE_BASE_HP;
     max_health[id] = CARNIVORE_BASE_HP;
@@ -204,6 +210,9 @@ size_t EntityManager::createOmnivore(int start_x, int start_y) {
     type[id] = AnimalType::OMNIVORE;
     x[id] = start_x;
     y[id] = start_y;
+    // Set previous positions to current positions to prevent animation interpolation from (0,0)
+    prev_x[id] = start_x;
+    prev_y[id] = start_y;
 
     base_max_health[id] = OMNIVORE_BASE_HP;
     max_health[id] = OMNIVORE_BASE_HP;

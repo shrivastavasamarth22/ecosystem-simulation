@@ -72,9 +72,9 @@ void World::generateBiomes() {
         float chance = dist_chance(rng);
 
         const BiomeType* chosen_biome;
-        if (chance < 0.05f) { // 5% chance for Forest (rarest)
+        if (chance < 0.025f) { // 5% chance for Forest (rarest)
             chosen_biome = &BIOME_FOREST;
-        } else if (chance < 0.35f) { // 40% chance for Grassland
+        } else if (chance < 0.15f) { // 40% chance for Grassland
             chosen_biome = &BIOME_GRASSLAND;
         } else { // 55% chance for Barren (most common)
             chosen_biome = &BIOME_BARREN;

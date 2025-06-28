@@ -11,12 +11,12 @@
 
 int main() {
     // ... (simulation parameters) ...
-    const int WORLD_WIDTH = 200;
-    const int WORLD_HEIGHT = 100; 
+    const int WORLD_WIDTH = 240;
+    const int WORLD_HEIGHT = 135; 
     const int SPATIAL_GRID_CELL_SIZE = 0; // 0 = auto-calculate optimal size
-    const int INITIAL_HERBIVORES = 25;
-    const int INITIAL_OMNIVORES = 10;
-    const int INITIAL_CARNIVORES = 5;
+    const int INITIAL_HERBIVORES = 250;
+    const int INITIAL_OMNIVORES = 50;
+    const int INITIAL_CARNIVORES = 50;
     const int SIMULATION_SPEED_MS = 500;
     const int MAX_TURNS = 2000;
     const int TILE_SIZE_PIXELS = 20;
