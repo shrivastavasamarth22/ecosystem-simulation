@@ -18,6 +18,8 @@ void EntityManager::clear() {
     is_alive.clear();
     x.clear();
     y.clear();
+    prev_x.clear();
+    prev_y.clear();
     target_x.clear();
     target_y.clear();
     target_id.clear();
@@ -50,6 +52,8 @@ size_t EntityManager::createEntity() {
     is_alive.push_back(true);
     x.push_back(0);
     y.push_back(0);
+    prev_x.push_back(0);
+    prev_y.push_back(0);
     target_x.push_back(-1);
     target_y.push_back(-1);
     target_id.push_back(-1); // Use -1 or a large value for "no target"
@@ -87,6 +91,8 @@ void EntityManager::destroyEntity(size_t index) {
         is_alive[index] = is_alive[last_index];
         x[index] = x[last_index];
         y[index] = y[last_index];
+        prev_x[index] = prev_x[last_index];
+        prev_y[index] = prev_y[last_index];
         target_x[index] = target_x[last_index];
         target_y[index] = target_y[last_index];
         target_id[index] = target_id[last_index];
@@ -115,6 +121,8 @@ void EntityManager::destroyEntity(size_t index) {
     is_alive.pop_back();
     x.pop_back();
     y.pop_back();
+    prev_x.pop_back();
+    prev_y.pop_back();
     target_x.pop_back();
     target_y.pop_back();
     target_id.pop_back();

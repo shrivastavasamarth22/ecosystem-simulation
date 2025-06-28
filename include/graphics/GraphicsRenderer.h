@@ -27,7 +27,7 @@ public:
     void update(float delta_time);
 
     void drawWorld(const World& world);
-    void drawEntities(const EntityManager& entityManager);
+    void drawEntities(const EntityManager& entityManager, float animation_progress);
     void drawUI(const World& world, bool is_paused);
     void drawSimulationEndedMessage();
     void drawCursor();

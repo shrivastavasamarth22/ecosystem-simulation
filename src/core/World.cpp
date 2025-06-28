@@ -179,6 +179,10 @@ void World::updateSpatialGrid() {
 void World::update() {
     turn_count++;
 
+    // Phase 0: Animation State Capture (NEW)
+    // Capture all current positions before any logic modifies them.
+    AnimationSystem::capturePreviousPositions(m_entityManager);
+
     // Phase 1: Environment & Spatial Grid (Based on positions from END of PREVIOUS turn)
     updateResources();
     updateSpatialGrid(); // Relies on positions FROM LAST TURN's Movement

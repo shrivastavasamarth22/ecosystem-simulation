@@ -5,6 +5,7 @@
 #include "resources/Biome.h"
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 // Define texture file paths
 const std::string ASSETS_PATH = "assets/";
@@ -138,25 +139,34 @@ void GraphicsRenderer::drawWorld(const World& world) {
     }
 }
 
-void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
+void GraphicsRenderer::drawEntities(const EntityManager& entityManager, float animation_progress) {
     m_window.setView(m_camera->getView());
 
     // View frustum culling - only render entities in visible area
     sf::FloatRect visible_bounds = getVisibleBounds();
+
+    // Easing function for smooth animation
+    float eased_progress = 1.0f - (1.0f - animation_progress) * (1.0f - animation_progress);
 
     for (size_t i = 0; i < entityManager.getEntityCount(); ++i) {
         if (!entityManager.is_alive[i]) {
             continue;
         }
 
+        // Interpolate position
+        float prev_pixel_x = entityManager.prev_x[i] * m_tile_size;
+        float prev_pixel_y = entityManager.prev_y[i] * m_tile_size;
+        float current_pixel_x = entityManager.x[i] * m_tile_size;
+        float current_pixel_y = entityManager.y[i] * m_tile_size;
+
+        float interp_x = prev_pixel_x + (current_pixel_x - prev_pixel_x) * eased_progress;
+        float interp_y = prev_pixel_y + (current_pixel_y - prev_pixel_y) * eased_progress;
+
         // Check if entity is within visible bounds
-        float entity_pixel_x = entityManager.x[i] * m_tile_size;
-        float entity_pixel_y = entityManager.y[i] * m_tile_size;
-        
-        if (entity_pixel_x + m_tile_size < visible_bounds.left || 
-            entity_pixel_x > visible_bounds.left + visible_bounds.width ||
-            entity_pixel_y + m_tile_size < visible_bounds.top || 
-            entity_pixel_y > visible_bounds.top + visible_bounds.height) {
+        if (interp_x + m_tile_size < visible_bounds.left || 
+            interp_x > visible_bounds.left + visible_bounds.width ||
+            interp_y + m_tile_size < visible_bounds.top || 
+            interp_y > visible_bounds.top + visible_bounds.height) {
             continue; // Entity is outside visible area, skip rendering
         }
 
@@ -165,7 +175,7 @@ void GraphicsRenderer::drawEntities(const EntityManager& entityManager) {
         if (it != m_animal_textures.end()) {
             sf::Sprite entity_sprite;
             entity_sprite.setTexture(it->second);
-            entity_sprite.setPosition(entity_pixel_x, entity_pixel_y);
+            entity_sprite.setPosition(interp_x, interp_y);
 
             // Optimized scaling: 64x64 animal texture to 20x20 tile
             entity_sprite.setScale(0.3125f, 0.3125f); // 20/64 = 0.3125

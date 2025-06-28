@@ -41,6 +41,10 @@ int main() {
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
     sf::Time timePerUpdate = sf::milliseconds(SIMULATION_SPEED_MS);
     bool is_paused = false; // <-- Pause state flag
+
+    // --- NEW: Animation Timing ---
+    float animation_progress = 0.0f; // 0.0 = start of turn, 1.0 = end of turn
+
     bool was_p_pressed_last_frame = false; // <-- To detect rising edge of P key
     bool simulation_ended = false; // <-- Flag to indicate if the simulation has ended
 
@@ -71,6 +75,7 @@ int main() {
             if (!is_paused && !simulation_ended)
             {
                 world.update();
+                animation_progress = 0.0f; // Reset animation timer each tick
 
                 // Check for end conditions AFTER the update
                 if (world.isEcosystemCollapsed() || world.getEntityManager().getEntityCount() == 0) {
@@ -81,7 +86,14 @@ int main() {
                     simulation_ended = true;
                 }
             }
-        }        // --- Update Camera System ---
+        }
+
+        // --- NEW: Update Animation Progress ---
+        if (!is_paused) {
+            animation_progress = std::min(1.0f, timeSinceLastUpdate.asSeconds() / timePerUpdate.asSeconds());
+        }
+
+        // --- Update Camera System ---
         float camera_delta_time = cameraClock.restart().asSeconds();
         renderer.update(camera_delta_time);
 
@@ -89,7 +101,7 @@ int main() {
         renderer.clear(sf::Color(100, 149, 237)); // Cornflower Blue
 
         renderer.drawWorld(world);
-        renderer.drawEntities(world.getEntityManager());
+        renderer.drawEntities(world.getEntityManager(), animation_progress);
         renderer.drawUI(world, is_paused);
 
         // Draw simulation ended message if simulation has ended

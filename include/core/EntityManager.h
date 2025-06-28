@@ -27,6 +27,8 @@ public:
     // Position & State
     std::vector<int>            x;
     std::vector<int>            y;
+    std::vector<int>            prev_x;
+    std::vector<int>            prev_y;
     std::vector<int>            target_x;
     std::vector<int>            target_y;
     std::vector<size_t>         target_id;

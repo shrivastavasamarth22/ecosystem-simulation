@@ -23,6 +23,7 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/systems/ActionSystem.cpp \
           $(SRC_DIR)/systems/MetabolismSystem.cpp \
           $(SRC_DIR)/systems/ReproductionSystem.cpp \
+          $(SRC_DIR)/systems/AnimationSystem.cpp \
           $(SRC_DIR)/resources/Resource.cpp \
           $(SRC_DIR)/resources/Tile.cpp \
           $(SRC_DIR)/resources/Biome.cpp \
@@ -40,6 +41,7 @@ OBJECTS = $(BUILD_DIR)/main.o \
           $(BUILD_DIR)/ActionSystem.o \
           $(BUILD_DIR)/MetabolismSystem.o \
           $(BUILD_DIR)/ReproductionSystem.o \
+          $(BUILD_DIR)/AnimationSystem.o \
           $(BUILD_DIR)/Resource.o \
           $(BUILD_DIR)/Tile.o \
           $(BUILD_DIR)/Biome.o \

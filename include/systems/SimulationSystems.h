@@ -9,5 +9,6 @@
 #include "systems/AISystem.h"
 #include "systems/ActionSystem.h"
 #include "systems/ReproductionSystem.h"
+#include "systems/AnimationSystem.h"
 
 #endif // SIMULATION_SYSTEMS_H
