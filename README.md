@@ -1,6 +1,13 @@
 # Data-Oriented, Multithreaded Ecosystem Simulation
 
-A high-performance C++ simulation that models complex predator-prey and **resource dynamics** using a **data-oriented architecture** and **multithreading**, visualized graphically with SFML.
+A high-performance C++ simulation that models complex predator-prey and **resource dynamics** using a **data-oriented architecture** and **multithreading**, vi- **v2.10: Advanced AI Behavior & System Reliability Improvements**
+    - **Distance-Based Target Selection:** Implemented intelligent target selection where all animals (territorial carnivores, herding herbivores, fleeing entities) choose the closest appropriate target instead of the first found, creating optimal and realistic behavior patterns.
+    - **Enhanced Food Seeking Algorithm:** Completely revamped foraging with energy-to-distance ratio optimization, preventing unrealistic cross-map travel while encouraging efficient local foraging with proximity bonuses for nearby food sources.
+    - **Consistent Threat Detection:** Fixed predator flee priority issues by making all threat detection use full sight radius, allowing animals to flee from any visible danger rather than waiting until threats are dangerously close.
+    - **Combat Range Compatibility:** Fixed combat system to use Euclidean distance (√2 ≈ 1.4 tiles) instead of Manhattan distance, making it compatible with diagonal movement and preventing endless chase loops.
+    - **Starvation Death Implementation:** Added explicit starvation death when energy reaches zero, creating realistic survival pressure and natural population control through resource competition.
+    - **Enhanced Mathematical Robustness:** Improved distance calculations, boundary checking, and target validation across all systems for more reliable and consistent behavior.
+- **v2.9: Modular System Architecture & Critical Behavior Fixes**ualized graphically with SFML.
 
 ## Overview
 
@@ -20,20 +27,23 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Biome-Based Terrain Generation:** The world is procedurally generated using a Voronoi diagram to create distinct, irregular biomes (Forest, Grassland, Barren). Each biome has a unique resource profile, influencing entity distribution and creating strategic points of interest.
 
 ### Entity Behavior & Survival
-- **Intelligent Agent Behavior:** Entities possess states processed by the AI System (`WANDERING`, `FLEEING`, `CHASING`, `PACK_HUNTING`, `HERDING`, `SEEKING_FOOD`).
+- **Intelligent Agent Behavior:** Entities possess states processed by the AI System (`WANDERING`, `FLEEING`, `CHASING`, `PACK_HUNTING`, `HERDING`, `SEEKING_FOOD`) with distance-based target selection for optimal decision-making.
 - **Dynamic Attribute System:** Every entity has stats for **Health (HP), Damage, Speed, and Sight Radius**. These stats change dynamically based on hunger levels and aging effects.
+- **Advanced Food Seeking:** Sophisticated foraging algorithm that prioritizes energy-to-distance ratio, preventing unrealistic long-distance travel while encouraging local resource utilization with proximity bonuses.
 - **Hunger & Desperation System:** Low energy triggers a high-risk, high-reward "desperation mode," temporarily boosting an entity's combat and movement stats at the cost of health drain, forcing a desperate search for food.
+- **Starvation Mechanics:** Animals die immediately when energy reaches zero, creating realistic survival pressure and natural population control through resource competition.
 - **Tiered Health Regeneration:** Entities can recover HP over time if they avoid damage, but severe injuries (tiers of health below max) permanently lower their maximum health cap, reflecting lasting injury.
 - **Comprehensive Aging System:** As entities grow older, their base stats (like speed, damage, sight) decline progressively after their prime age using dedicated aging penalties. This creates realistic lifecycle dynamics where older entities become less effective and more vulnerable, with species-specific aging rates that influence hunting strategies and population dynamics.
 
 ### Ecological & Social Dynamics
 - **Resource System:** The world grid contains consumable, regenerating resources (starting with "Grass" and "Berries"). Entities must actively seek out specific resource types and consume them via the Action System to gain energy based on the resource's nutritional value. Over-consumption leads to local depletion, driving migration and starvation.
 - **Age-Based Nutritional Value:** The energy gained from a kill is dynamically calculated based on the age and type of the killed entity, making older, weaker ones a lower-reward target and influencing predator hunting strategies.
-- **Advanced Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out others of their kind to form groups. Herd bonus calculations are processed in a thread-safe manner to prevent race conditions while maintaining performance.
+- **Intelligent Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out the closest herd members to form optimal groups. Herd bonus calculations are processed in a thread-safe manner to prevent race conditions while maintaining performance.
 - **Herd Health Bonus:** Being in a herd grants a dynamic bonus to Max HP, representing "safety in numbers" and making herd members tougher targets for predators.
-- **Strategic Hunting:** Carnivore entities hunt Herbivores (primary prey) or strategically hunt lone/small groups of Omnivores if they are not in a threatening pack size (`CHASING` state). Omnivores hunt Herbivores and can form coordinated packs to hunt powerful Carnivores (`PACK_HUNTING` state), with improved ally detection logic.
-- **Basic Territorial Behavior:** Carnivores exhibit territoriality and will engage in lethal combat (`CHASING` state leading to combat) with other Carnivores that enter their territorial radius. Cannibalism does not provide energy gain in territorial fights.
-- **Natural Population Control:** Complex interactions between resource availability, predator-prey relationships, aging, hunger, and intra-species conflict provide dynamic mechanisms for population booms, busts, and cycles.
+- **Strategic Hunting with Distance Optimization:** Carnivore entities hunt Herbivores (primary prey) or strategically hunt lone/small groups of Omnivores if they are not in a threatening pack size (`CHASING` state). Omnivores hunt Herbivores and can form coordinated packs to hunt powerful Carnivores (`PACK_HUNTING` state), with all hunting behaviors using closest-target selection for optimal engagement.
+- **Enhanced Territorial Behavior:** Carnivores exhibit territoriality and will engage in lethal combat (`CHASING` state leading to combat) with the closest rival Carnivores within their territorial radius. Combat uses Euclidean distance for realistic engagement ranges compatible with diagonal movement. Cannibalism does not provide energy gain in territorial fights.
+- **Consistent Threat Response:** All predator-prey interactions use full sight radius for threat detection, allowing animals to flee from any visible danger rather than waiting until threats are dangerously close.
+- **Natural Population Control:** Complex interactions between resource availability, predator-prey relationships, aging, hunger, starvation death, and intra-species conflict provide dynamic mechanisms for population booms, busts, and cycles.
 
 ### Visualization & User Interface
 - **SFML Graphical Window:** Replaces console output with a dedicated window for visualization.

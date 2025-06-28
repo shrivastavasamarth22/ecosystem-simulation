@@ -2,6 +2,7 @@
 #include "common/AnimalConfig.h"
 #include "common/AnimalTypes.h"
 #include <algorithm>
+#include <cmath>
 
 namespace AISystem {
 
@@ -43,7 +44,6 @@ namespace AISystem {
 
                 // --- Variables local to the loop iteration ---
                 // Use best_food_energy instead of best_food_amount
-                float best_food_energy = 0.0f; // <-- Changed
                 int food_x = -1;
                 int food_y = -1;
 
@@ -62,30 +62,53 @@ namespace AISystem {
                             data.state[i] = AIState::FLEEING; data.target_id[i] = predators[0]; continue;
                         }
 
-                        // Seek Food if hungry - Prioritize by ENERGY
+                        // Seek Food if hungry - Prioritize by ENERGY-TO-DISTANCE RATIO
                         if (data.energy[i] < data.max_energy[i] * HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE) {
-                            // Use best_food_energy
-                            best_food_energy = 0.0f; food_x = -1; food_y = -1; // Reset for this scan
+                            // Use best_food_efficiency (energy per distance)
+                            float best_food_efficiency = 0.0f; 
+                            food_x = -1; food_y = -1; // Reset for this scan
                             int scan_radius = static_cast<int>(data.current_sight_radius[i]);
 
-                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
-                                    int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
-                                    if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
-                                        const Tile& tile = world.getTile(check_x, check_y);
-                                        // --- MODIFIED COMPARISON ---
-                                        if (tile.resource_type && tile.getConsumableAmount() > 0.0f) { // Ensure there is actually consumable food
-                                            float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
-                                            if (potential_energy > best_food_energy) { // <-- Compare energy
-                                                best_food_energy = potential_energy; // <-- Store energy
-                                                food_x = check_x; food_y = check_y;
-                                            }
+                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { 
+                                for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
+                                    int check_x = data.x[i] + dx; 
+                                    int check_y = data.y[i] + dy;
+                                    
+                                    // Skip if out of bounds or beyond sight radius
+                                    if (check_x < 0 || check_x >= world.getWidth() || 
+                                        check_y < 0 || check_y >= world.getHeight() || 
+                                        dx * dx + dy * dy > scan_radius * scan_radius) {
+                                        continue;
+                                    }
+                                    
+                                    const Tile& tile = world.getTile(check_x, check_y);
+                                    // Ensure there is actually consumable food
+                                    if (tile.resource_type && tile.getConsumableAmount() > 0.0f) {
+                                        float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
+                                        
+                                        // Calculate distance (minimum 1 to avoid division by zero)
+                                        float distance = std::max(1.0f, std::sqrt(float(dx * dx + dy * dy)));
+                                        
+                                        // Calculate efficiency: energy per unit distance
+                                        // Add small bonus for very close food to prefer nearby resources
+                                        float efficiency = potential_energy / distance;
+                                        if (distance <= 2.0f) efficiency *= 1.5f; // 50% bonus for adjacent/very close food
+                                        
+                                        if (efficiency > best_food_efficiency) {
+                                            best_food_efficiency = efficiency;
+                                            food_x = check_x; 
+                                            food_y = check_y;
                                         }
                                     }
                                 }
                             }
-                            // Check if any food energy was found
-                            if (best_food_energy > 0.0f) { // <-- Check energy > 0
-                                data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
+                            
+                            // Only seek food if we found something reasonably efficient
+                            if (best_food_efficiency > 0.0f) {
+                                data.state[i] = AIState::SEEKING_FOOD; 
+                                data.target_x[i] = food_x; 
+                                data.target_y[i] = food_y; 
+                                continue;
                             }
                         }
 
@@ -93,15 +116,27 @@ namespace AISystem {
                         if (herd_size <= 1) {
                             auto potential_herd = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_DETECTION_RADIUS, AnimalType::HERBIVORE);
                             if (!potential_herd.empty()) {
-                                size_t target_found_id = (size_t)-1;
+                                size_t closest_herd_member_id = (size_t)-1;
+                                float closest_distance_sq = float(HERD_DETECTION_RADIUS * HERD_DETECTION_RADIUS + 1); // Start with max+1
+                                
                                 for(size_t potential_target_id : potential_herd) {
-                                    if (potential_target_id != i) {
-                                        target_found_id = potential_target_id;
-                                        break;
+                                    if (potential_target_id != i) { // Exclude self
+                                        // Calculate distance to this potential herd member
+                                        int dx = data.x[i] - data.x[potential_target_id];
+                                        int dy = data.y[i] - data.y[potential_target_id];
+                                        float distance_sq = float(dx * dx + dy * dy);
+                                        
+                                        if (distance_sq < closest_distance_sq) {
+                                            closest_distance_sq = distance_sq;
+                                            closest_herd_member_id = potential_target_id;
+                                        }
                                     }
                                 }
-                                if (target_found_id != (size_t)-1) {
-                                    data.state[i] = AIState::HERDING; data.target_id[i] = target_found_id; continue;
+                                
+                                if (closest_herd_member_id != (size_t)-1) {
+                                    data.state[i] = AIState::HERDING; 
+                                    data.target_id[i] = closest_herd_member_id; 
+                                    continue;
                                 }
                             }
                         }
@@ -111,31 +146,56 @@ namespace AISystem {
                     case AnimalType::CARNIVORE:
                     {
                         // Priority 1: Flee from Omnivore packs
-                        auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::OMNIVORE);
+                        auto nearby_omnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::OMNIVORE);
                         if(nearby_omnivores_for_pack_check.size() >= OMNIVORE_PACK_THREAT_SIZE) {
                             // Choose the closest omnivore as flee target
-                            size_t closest_omnivore = nearby_omnivores_for_pack_check[0];
-                            data.state[i] = AIState::FLEEING; 
-                            data.target_id[i] = closest_omnivore; 
-                            continue;
+                            size_t closest_omnivore_id = (size_t)-1;
+                            float closest_distance_sq = float(data.current_sight_radius[i] * data.current_sight_radius[i] + 1);
+                            
+                            for (size_t potential_omnivore_id : nearby_omnivores_for_pack_check) {
+                                // Calculate distance to this omnivore
+                                int dx = data.x[i] - data.x[potential_omnivore_id];
+                                int dy = data.y[i] - data.y[potential_omnivore_id];
+                                float distance_sq = float(dx * dx + dy * dy);
+                                
+                                if (distance_sq < closest_distance_sq) {
+                                    closest_distance_sq = distance_sq;
+                                    closest_omnivore_id = potential_omnivore_id;
+                                }
+                            }
+                            
+                            if (closest_omnivore_id != (size_t)-1) {
+                                data.state[i] = AIState::FLEEING; 
+                                data.target_id[i] = closest_omnivore_id; 
+                                continue;
+                            }
                         }
 
                         // --- NEW Priority 2: Confront Rival Carnivores ---
                         // Check for *other* carnivores within territorial radius
                         auto nearby_rival_carnivores = world.getAnimalsNear(data, data.x[i], data.y[i], CARNIVORE_TERRITORIAL_RADIUS, AnimalType::CARNIVORE);
-                        // Exclude self from the list
-                        // A simpler check: if the list is not empty AND contains an ID other than 'i'
+                        // Find the closest rival (excluding self)
                         if (!nearby_rival_carnivores.empty()) {
-                            size_t rival_id = (size_t)-1;
+                            size_t closest_rival_id = (size_t)-1;
+                            float closest_distance_sq = float(CARNIVORE_TERRITORIAL_RADIUS * CARNIVORE_TERRITORIAL_RADIUS + 1); // Start with max+1
+                            
                             for (size_t potential_rival_id : nearby_rival_carnivores) {
-                                if (potential_rival_id != i) {
-                                    rival_id = potential_rival_id;
-                                    break; // Found a rival!
+                                if (potential_rival_id != i) { // Exclude self
+                                    // Calculate distance to this rival
+                                    int dx = data.x[i] - data.x[potential_rival_id];
+                                    int dy = data.y[i] - data.y[potential_rival_id];
+                                    float distance_sq = float(dx * dx + dy * dy);
+                                    
+                                    if (distance_sq < closest_distance_sq) {
+                                        closest_distance_sq = distance_sq;
+                                        closest_rival_id = potential_rival_id;
+                                    }
                                 }
                             }
-                            if (rival_id != (size_t)-1) {
+                            
+                            if (closest_rival_id != (size_t)-1) {
                                 data.state[i] = AIState::CHASING; // Use CHASING state for combat
-                                data.target_id[i] = rival_id;
+                                data.target_id[i] = closest_rival_id;
                                 continue; // Decision made
                             }
                         }
@@ -158,42 +218,89 @@ namespace AISystem {
 
                     case AnimalType::OMNIVORE:
                     {
-                        auto nearby_carnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::CARNIVORE);
+                        // Priority 1: Flee from Carnivore groups (using full sight radius)
+                        auto nearby_carnivores_for_pack_check = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::CARNIVORE);
                         if(nearby_carnivores_for_pack_check.size() >= OMNIVORE_PACK_HUNT_SIZE) {
-                            data.state[i] = AIState::FLEEING; data.target_id[i] = nearby_carnivores_for_pack_check[0]; continue;
+                            // Choose the closest carnivore as flee target
+                            size_t closest_carnivore_id = (size_t)-1;
+                            float closest_distance_sq = float(data.current_sight_radius[i] * data.current_sight_radius[i] + 1);
+                            
+                            for (size_t potential_carnivore_id : nearby_carnivores_for_pack_check) {
+                                // Calculate distance to this carnivore
+                                int dx = data.x[i] - data.x[potential_carnivore_id];
+                                int dy = data.y[i] - data.y[potential_carnivore_id];
+                                float distance_sq = float(dx * dx + dy * dy);
+                                
+                                if (distance_sq < closest_distance_sq) {
+                                    closest_distance_sq = distance_sq;
+                                    closest_carnivore_id = potential_carnivore_id;
+                                }
+                            }
+                            
+                            if (closest_carnivore_id != (size_t)-1) {
+                                data.state[i] = AIState::FLEEING; 
+                                data.target_id[i] = closest_carnivore_id; 
+                                continue;
+                            }
                         }
+                        
+                        // Priority 2: Hunt Herbivores
                         auto nearby_herbivores = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::HERBIVORE);
                         if (!nearby_herbivores.empty()) {
                             data.state[i] = AIState::CHASING; data.target_id[i] = nearby_herbivores[0]; continue;
                         }
 
-                        // Seek Grass if hungry - Prioritize by ENERGY
+                        // Seek Grass if hungry - Prioritize by ENERGY-TO-DISTANCE RATIO
                         if (data.energy[i] < data.max_energy[i] * OMNIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE) {
-                            // Use best_food_energy
-                            best_food_energy = 0.0f; food_x = -1; food_y = -1; // Reset for this scan
+                            // Use best_food_efficiency (energy per distance)
+                            float best_food_efficiency = 0.0f; 
+                            food_x = -1; food_y = -1; // Reset for this scan
                             int scan_radius = static_cast<int>(data.current_sight_radius[i]);
 
-                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
-                                    int check_x = data.x[i] + dx; int check_y = data.y[i] + dy;
-                                    if (check_x >= 0 && check_x < world.getWidth() && check_y >= 0 && check_y < world.getHeight() && dx * dx + dy * dy <= scan_radius * scan_radius) {
-                                        const Tile& tile = world.getTile(check_x, check_y);
-                                        // --- FIXED: Check for actually consumable food ---
-                                        if (tile.resource_type && tile.getConsumableAmount() > 0.0f) { // Ensure there is actually consumable food
-                                            float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
-                                            if (potential_energy > best_food_energy) { // <-- Compare energy
-                                                best_food_energy = potential_energy; // <-- Store energy
-                                                food_x = check_x; food_y = check_y;
-                                            }
+                            for (int dy = -scan_radius; dy <= scan_radius; ++dy) { 
+                                for (int dx = -scan_radius; dx <= scan_radius; ++dx) {
+                                    int check_x = data.x[i] + dx; 
+                                    int check_y = data.y[i] + dy;
+                                    
+                                    // Skip if out of bounds or beyond sight radius
+                                    if (check_x < 0 || check_x >= world.getWidth() || 
+                                        check_y < 0 || check_y >= world.getHeight() || 
+                                        dx * dx + dy * dy > scan_radius * scan_radius) {
+                                        continue;
+                                    }
+                                    
+                                    const Tile& tile = world.getTile(check_x, check_y);
+                                    // Ensure there is actually consumable food
+                                    if (tile.resource_type && tile.getConsumableAmount() > 0.0f) {
+                                        float potential_energy = tile.resource_amount * tile.resource_type->nutritional_value;
+                                        
+                                        // Calculate distance (minimum 1 to avoid division by zero)
+                                        float distance = std::max(1.0f, std::sqrt(float(dx * dx + dy * dy)));
+                                        
+                                        // Calculate efficiency: energy per unit distance
+                                        // Add small bonus for very close food to prefer nearby resources
+                                        float efficiency = potential_energy / distance;
+                                        if (distance <= 2.0f) efficiency *= 1.5f; // 50% bonus for adjacent/very close food
+                                        
+                                        if (efficiency > best_food_efficiency) {
+                                            best_food_efficiency = efficiency;
+                                            food_x = check_x; 
+                                            food_y = check_y;
                                         }
                                     }
                                 }
                             }
-                            // Check if any food energy was found
-                            if (best_food_energy > 0.0f) { // <-- Check energy > 0
-                                data.state[i] = AIState::SEEKING_FOOD; data.target_x[i] = food_x; data.target_y[i] = food_y; continue;
+                            
+                            // Only seek food if we found something reasonably efficient
+                            if (best_food_efficiency > 0.0f) {
+                                data.state[i] = AIState::SEEKING_FOOD; 
+                                data.target_x[i] = food_x; 
+                                data.target_y[i] = food_y; 
+                                continue;
                             }
                         }
 
+                        // Priority 4: Pack hunt Carnivores (if we have enough allies)
                         auto nearby_carnivores_for_hunt = world.getAnimalsNear(data, data.x[i], data.y[i], static_cast<int>(data.current_sight_radius[i]), AnimalType::CARNIVORE);
                         if (!nearby_carnivores_for_hunt.empty()) {
                             size_t potential_carnivore_target_id = nearby_carnivores_for_hunt[0];
@@ -203,7 +310,8 @@ namespace AISystem {
                                 data.is_alive[potential_carnivore_target_id]) {
                                 
                                 // Check if we have enough allies near OURSELVES (the hunter) for pack hunting
-                                auto allies_near_hunter = world.getAnimalsNear(data, data.x[i], data.y[i], 2, AnimalType::OMNIVORE);
+                                // Use a smaller radius for pack coordination (allies need to be close)
+                                auto allies_near_hunter = world.getAnimalsNear(data, data.x[i], data.y[i], 3, AnimalType::OMNIVORE);
                                 if(allies_near_hunter.size() >= OMNIVORE_PACK_HUNT_SIZE) {
                                     data.state[i] = AIState::PACK_HUNTING; 
                                     data.target_id[i] = potential_carnivore_target_id; 

@@ -1,5 +1,50 @@
 # Changelog
 
+## v2.10: Advanced AI Behavior & System Reliability Improvements
+**Date:** January 2025
+### Major AI & Behavioral Enhancements
+- **Distance-Based Target Selection:** Implemented intelligent target selection across all animal behaviors
+  - Territorial carnivores now attack the closest rival instead of the first found
+  - Herbivores seek the closest herd member for efficient herding behavior
+  - Predators flee from the closest threat for optimal escape routes
+- **Enhanced Food Seeking Algorithm:** Completely revamped foraging behavior with energy-to-distance ratio optimization
+  - Animals now prioritize nearby adequate food over distant optimal food
+  - 50% efficiency bonus for food within 2 tiles to encourage local foraging
+  - Prevents unrealistic cross-map travel for marginally better resources
+  - Natural clustering around food sources instead of random spreading
+- **Consistent Threat Detection:** Fixed predator flee priority inconsistencies
+  - Both carnivores and omnivores now use full sight radius for threat detection
+  - Consistent behavior where animals can flee from any threat they can see
+  - Enhanced survival strategies with early threat response
+
+### Critical System Fixes
+- **Combat Range Compatibility:** Fixed combat range inconsistency with movement system
+  - Uses Euclidean distance (√2 ≈ 1.4 tiles) instead of Manhattan distance
+  - Compatible with diagonal movement patterns to prevent endless chase loops
+  - More forgiving combat range accounts for realistic movement limitations
+- **Starvation Death Implementation:** Added explicit starvation death when energy reaches zero
+  - Animals now die immediately upon energy depletion instead of indefinite survival
+  - Creates realistic survival pressure and natural population control
+  - Energy management becomes critical survival mechanic
+- **Enhanced Pack Coordination:** Improved omnivore pack hunting coordination radius from 2 to 3 tiles for more reliable pack formation
+
+### Algorithmic Improvements
+- **Mathematical Robustness:** Enhanced distance calculations with proper bounds checking
+  - Division by zero prevention in food efficiency calculations
+  - Accurate Euclidean distance for consistent circular ranges
+  - Float precision throughout calculation chains
+- **Performance Optimizations:** Improved loop structures and early termination conditions
+  - Better boundary checking reduces unnecessary calculations
+  - Efficient target validation prevents processing of dead entities
+  - Squared distance comparisons avoid expensive square root operations where possible
+
+### Behavioral Impact Summary
+- **Realistic Foraging:** Animals make intelligent decisions about food sources based on proximity and energy yield
+- **Efficient Herding:** Herbivores form compact, defensible groups through smart target selection  
+- **Strategic Combat:** Territorial behavior focuses on immediate threats with optimal target prioritization
+- **Natural Survival:** Starvation provides realistic population pressure and resource competition
+- **Reliable Mechanics:** All systems work harmoniously without artificial behavioral limitations
+
 ## v2.9: Modular System Architecture & Critical Behavior Fixes
 **Date:** January 2025
 ### Major Architecture Refactor

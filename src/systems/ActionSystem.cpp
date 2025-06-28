@@ -32,9 +32,12 @@ namespace ActionSystem {
                         int dy = std::abs(data.y[i] - data.y[target_entity_id]);
 
                         // --- MODIFIED COMBAT CONDITION ---
-                        // Allow combat if entities are adjacent OR on the same tile.
-                        // The old condition (dx > 0 || dy > 0) prevented combat on the same tile, causing a deadlock.
-                        if (dx <= 1 && dy <= 1)
+                        // Allow combat within a reasonable range to account for movement patterns.
+                        // Use Euclidean distance to handle diagonal movement properly.
+                        float distance_sq = float(dx * dx + dy * dy);
+                        float max_combat_distance_sq = 2.0f; // Allows combat within ~1.4 tiles (sqrt(2))
+                        
+                        if (distance_sq <= max_combat_distance_sq)
                         {
                             // --- Attack ---
                             float damage_to_deal = data.current_damage[i];

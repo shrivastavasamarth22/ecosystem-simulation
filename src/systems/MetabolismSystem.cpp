@@ -36,6 +36,14 @@ namespace MetabolismSystem {
             data.age[i]++;
             data.energy[i] -= 1.0f;
 
+            // Check for starvation death - animals die when energy reaches 0 or below
+            if (data.energy[i] <= 0.0f) {
+                data.is_alive[i] = false; // Mark as dead from starvation
+                data.health[i] = 0.0f;    // Set health to 0 for consistency
+                data.energy[i] = 0.0f;    // Ensure energy doesn't go negative
+                continue; // Skip further processing for this dead entity
+            }
+
             // Calculate aging penalties for stats
             float age_penalty_factor = 1.0f; // Start with no penalty
             if (data.age[i] > data.prime_age[i]) {

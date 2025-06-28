@@ -95,7 +95,12 @@ Input Events → Event Handler → Camera System Updates → Rendering System �
 - **Memory pre-allocation** reduces dynamic allocations in spatial grid and rendering systems
 - **Smooth interpolation** provides responsive user experience without performance cost
 
-## Recent Performance Optimizations (v2.8-v2.9)
+## Recent Performance Optimizations (v2.8-v2.10)
+- **Advanced AI Behavior Systems**: Implemented distance-based target selection and energy-to-distance optimization
+- **Enhanced Food Seeking**: Sophisticated foraging algorithms with proximity bonuses and realistic travel limitations
+- **Combat System Reliability**: Euclidean distance-based combat ranges compatible with diagonal movement patterns
+- **Starvation Mechanics**: Explicit energy-based death system for realistic survival pressure
+- **Consistent Threat Detection**: Full sight radius threat detection across all predator-prey interactions
 - **Modular System Architecture**: Split monolithic systems into dedicated modules for better maintainability
 - **Race Condition Fixes**: Resolved critical threading issues in herd bonus calculations and pack hunting
 - **Aging System Implementation**: Added comprehensive aging penalties with species-specific decline rates
