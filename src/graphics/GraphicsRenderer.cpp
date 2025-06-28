@@ -224,19 +224,35 @@ void GraphicsRenderer::drawSelectionIndicator(const EntityManager& entityManager
     float interp_x = prev_pixel_x + (current_pixel_x - prev_pixel_x) * eased_progress;
     float interp_y = prev_pixel_y + (current_pixel_y - prev_pixel_y) * eased_progress;
     
-    // Draw selection circle
+    // Draw selection circle with pulsing effect
     sf::CircleShape selection_circle;
     float radius = m_tile_size * 0.8f; // Slightly larger than entity
     selection_circle.setRadius(radius);
     selection_circle.setOrigin(radius, radius); // Center the circle
     selection_circle.setPosition(interp_x + m_tile_size / 2.0f, interp_y + m_tile_size / 2.0f);
     
-    // Yellow circle with transparent fill
+    // Create pulsing effect with time-based animation
+    static sf::Clock pulse_clock;
+    float pulse_time = pulse_clock.getElapsedTime().asSeconds();
+    float pulse_factor = 0.8f + 0.2f * std::sin(pulse_time * 3.0f); // Pulse between 0.8 and 1.0
+    
+    // Yellow circle with pulsing opacity and thickness
     selection_circle.setFillColor(sf::Color::Transparent);
-    selection_circle.setOutlineColor(sf::Color::Yellow);
-    selection_circle.setOutlineThickness(2.0f);
+    selection_circle.setOutlineColor(sf::Color(255, 255, 0, static_cast<sf::Uint8>(200 * pulse_factor)));
+    selection_circle.setOutlineThickness(3.0f * pulse_factor);
     
     m_window.draw(selection_circle);
+    
+    // Add inner highlight circle for better visibility
+    sf::CircleShape inner_circle;
+    float inner_radius = radius * 0.6f;
+    inner_circle.setRadius(inner_radius);
+    inner_circle.setOrigin(inner_radius, inner_radius);
+    inner_circle.setPosition(interp_x + m_tile_size / 2.0f, interp_y + m_tile_size / 2.0f);
+    inner_circle.setFillColor(sf::Color(255, 255, 0, static_cast<sf::Uint8>(60 * pulse_factor)));
+    inner_circle.setOutlineColor(sf::Color::Transparent);
+    
+    m_window.draw(inner_circle);
 }
 
 void GraphicsRenderer::drawEntityDetailPanel(const EntityManager& entityManager) {

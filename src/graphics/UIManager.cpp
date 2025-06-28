@@ -9,7 +9,7 @@ const std::string HERBIVORE_TEXTURE_PATH_UI = ASSETS_PATH_UI + "textures/herbivo
 const std::string CARNIVORE_TEXTURE_PATH_UI = ASSETS_PATH_UI + "textures/carnivore.png";
 const std::string OMNIVORE_TEXTURE_PATH_UI = ASSETS_PATH_UI + "textures/omnivore.png";
 
-UIManager::UIManager() {}
+UIManager::UIManager() : m_last_selected_entity(static_cast<size_t>(-1)) {}
 
 bool UIManager::loadAssets() {
     if (!m_font.loadFromFile(FONT_PATH_UI)) {
@@ -220,17 +220,17 @@ void UIManager::drawEntityDetailPanel(sf::RenderWindow& window, const EntityMana
     window.draw(title_text);
     
     // Entity information
-    float text_y = panel_y + 60;
+    float text_y = panel_y + 50; // Adjusted for removed instruction text
     float line_spacing = 30; // Increased spacing
     float section_spacing = 20; // Additional spacing between sections
     
-    // Helper lambda for drawing info lines
-    auto drawInfoLine = [&](const std::string& label, const std::string& value) {
+    // Helper lambda for drawing info lines with optional color coding
+    auto drawInfoLine = [&](const std::string& label, const std::string& value, sf::Color color = sf::Color::White) {
         sf::Text info_text;
         info_text.setFont(m_font);
         info_text.setString(label + ": " + value);
         info_text.setCharacterSize(16); // Larger text
-        info_text.setFillColor(sf::Color::White);
+        info_text.setFillColor(color);
         info_text.setPosition(panel_x + 15, text_y);
         window.draw(info_text);
         text_y += line_spacing;

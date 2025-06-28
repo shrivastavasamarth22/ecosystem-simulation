@@ -23,6 +23,10 @@ private:
     sf::Sprite m_cursor_sprite;
     std::map<AnimalType, sf::Texture> m_animal_textures;
     
+    // Performance optimization: cache for entity detail panel
+    mutable size_t m_last_selected_entity;
+    mutable std::string m_cached_panel_content;
+    
     // Helper methods for entity detail panel
     std::string getAnimalTypeString(AnimalType type);
     std::string getAIStateString(AIState state);
