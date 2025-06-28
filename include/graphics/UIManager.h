@@ -3,6 +3,8 @@
 
 #include <SFML/Graphics.hpp>
 #include "core/World.h"
+#include "core/EntityManager.h"
+#include "graphics/Camera.h"
 #include "common/AnimalTypes.h"
 #include <map>
 
@@ -11,6 +13,7 @@ public:
     UIManager();
     bool loadAssets();
     void drawUI(sf::RenderWindow& window, const World& world, bool is_paused);
+    void drawEntityDetailPanel(sf::RenderWindow& window, const EntityManager& entityManager, const Camera& camera);
     void drawSimulationEndedMessage(sf::RenderWindow& window);
     void drawCursor(sf::RenderWindow& window);
 
@@ -19,6 +22,10 @@ private:
     sf::Texture m_cursor_texture;
     sf::Sprite m_cursor_sprite;
     std::map<AnimalType, sf::Texture> m_animal_textures;
+    
+    // Helper methods for entity detail panel
+    std::string getAnimalTypeString(AnimalType type);
+    std::string getAIStateString(AIState state);
 };
 
 #endif // UIMANAGER_H

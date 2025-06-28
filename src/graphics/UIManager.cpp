@@ -178,3 +178,101 @@ void UIManager::drawCursor(sf::RenderWindow& window) {
     m_cursor_sprite.setPosition(static_cast<sf::Vector2f>(mouse_pos));
     window.draw(m_cursor_sprite);
 }
+
+void UIManager::drawEntityDetailPanel(sf::RenderWindow& window, const EntityManager& entityManager, const Camera& camera) {
+    if (!camera.hasSelectedEntity()) {
+        return;
+    }
+    
+    size_t selected_id = camera.getSelectedEntity();
+    
+    // Validate entity exists
+    if (selected_id >= entityManager.getEntityCount() || !entityManager.is_alive[selected_id]) {
+        return;
+    }
+    
+    // Set UI view
+    sf::View ui_view(sf::FloatRect(0, 0, window.getSize().x, window.getSize().y));
+    window.setView(ui_view);
+    
+    // Panel dimensions and position (right side of screen)
+    float panel_width = 400.0f;  // Increased width
+    float panel_height = 500.0f; // Increased height
+    float panel_x = window.getSize().x - panel_width - 20.0f; // Right side with margin
+    float panel_y = 20.0f;
+    
+    // Draw semi-transparent background panel
+    sf::RectangleShape panel_bg;
+    panel_bg.setSize(sf::Vector2f(panel_width, panel_height));
+    panel_bg.setPosition(panel_x, panel_y);
+    panel_bg.setFillColor(sf::Color(0, 0, 0, 180)); // Semi-transparent black
+    panel_bg.setOutlineColor(sf::Color(100, 100, 100, 200));
+    panel_bg.setOutlineThickness(2.0f);
+    window.draw(panel_bg);
+    
+    // Title
+    sf::Text title_text;
+    title_text.setFont(m_font);
+    title_text.setString("Entity Details");
+    title_text.setCharacterSize(24); // Larger title
+    title_text.setFillColor(sf::Color::White);
+    title_text.setPosition(panel_x + 15, panel_y + 15);
+    window.draw(title_text);
+    
+    // Entity information
+    float text_y = panel_y + 60;
+    float line_spacing = 30; // Increased spacing
+    
+    // Helper lambda for drawing info lines
+    auto drawInfoLine = [&](const std::string& label, const std::string& value) {
+        sf::Text info_text;
+        info_text.setFont(m_font);
+        info_text.setString(label + ": " + value);
+        info_text.setCharacterSize(16); // Larger text
+        info_text.setFillColor(sf::Color::White);
+        info_text.setPosition(panel_x + 15, text_y);
+        window.draw(info_text);
+        text_y += line_spacing;
+    };
+    
+    // Basic Info
+    drawInfoLine("Type", getAnimalTypeString(entityManager.type[selected_id]));
+    drawInfoLine("Position", "(" + std::to_string(entityManager.x[selected_id]) + ", " + std::to_string(entityManager.y[selected_id]) + ")");
+    drawInfoLine("Age", std::to_string(entityManager.age[selected_id]));
+    
+    // Health & Energy
+    text_y += 15; // Extra spacing
+    drawInfoLine("Health", std::to_string(static_cast<int>(entityManager.health[selected_id])) + "/" + std::to_string(static_cast<int>(entityManager.max_health[selected_id])));
+    drawInfoLine("Energy", std::to_string(static_cast<int>(entityManager.energy[selected_id])) + "/" + std::to_string(static_cast<int>(entityManager.max_energy[selected_id])));
+    
+    // Stats
+    text_y += 15; // Extra spacing
+    drawInfoLine("Damage", std::to_string(static_cast<int>(entityManager.current_damage[selected_id])));
+    drawInfoLine("Speed", std::to_string(static_cast<int>(entityManager.current_speed[selected_id])));
+    drawInfoLine("Sight", std::to_string(static_cast<int>(entityManager.current_sight_radius[selected_id])));
+    
+    // AI State
+    text_y += 15; // Extra spacing
+    drawInfoLine("AI State", getAIStateString(entityManager.state[selected_id]));
+}
+
+std::string UIManager::getAnimalTypeString(AnimalType type) {
+    switch (type) {
+        case AnimalType::HERBIVORE: return "Herbivore";
+        case AnimalType::CARNIVORE: return "Carnivore";
+        case AnimalType::OMNIVORE: return "Omnivore";
+        default: return "Unknown";
+    }
+}
+
+std::string UIManager::getAIStateString(AIState state) {
+    switch (state) {
+        case AIState::WANDERING: return "Wandering";
+        case AIState::SEEKING_FOOD: return "Seeking Food";
+        case AIState::FLEEING: return "Fleeing";
+        case AIState::CHASING: return "Chasing";
+        case AIState::HERDING: return "Herding";
+        case AIState::PACK_HUNTING: return "Pack Hunting";
+        default: return "Unknown";
+    }
+}

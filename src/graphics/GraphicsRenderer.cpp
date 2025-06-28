@@ -239,6 +239,10 @@ void GraphicsRenderer::drawSelectionIndicator(const EntityManager& entityManager
     m_window.draw(selection_circle);
 }
 
+void GraphicsRenderer::drawEntityDetailPanel(const EntityManager& entityManager) {
+    m_ui_manager->drawEntityDetailPanel(m_window, entityManager, *m_camera);
+}
+
 sf::FloatRect GraphicsRenderer::getVisibleBounds() const {
     sf::View current_view = m_camera->getView();
     sf::Vector2f center = current_view.getCenter();

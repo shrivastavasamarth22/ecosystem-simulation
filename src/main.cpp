@@ -17,7 +17,7 @@ int main() {
     const int INITIAL_HERBIVORES = 250;
     const int INITIAL_OMNIVORES = 50;
     const int INITIAL_CARNIVORES = 50;
-    const int SIMULATION_SPEED_MS = 500;
+    const int SIMULATION_SPEED_MS = 1500;
     const int MAX_TURNS = 2000;
     const int TILE_SIZE_PIXELS = 20;
     const std::string WINDOW_TITLE = "Ecosystem Simulation";
@@ -104,6 +104,7 @@ int main() {
         renderer.drawEntities(world.getEntityManager(), animation_progress);
         renderer.drawSelectionIndicator(world.getEntityManager(), animation_progress);
         renderer.drawUI(world, is_paused);
+        renderer.drawEntityDetailPanel(world.getEntityManager());
 
         // Draw simulation ended message if simulation has ended
         if (simulation_ended) {

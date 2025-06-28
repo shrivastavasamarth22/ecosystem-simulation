@@ -30,6 +30,7 @@ public:
     void drawEntities(const EntityManager& entityManager, float animation_progress);
     void drawSelectionIndicator(const EntityManager& entityManager, float animation_progress);
     void drawUI(const World& world, bool is_paused);
+    void drawEntityDetailPanel(const EntityManager& entityManager);
     void drawSimulationEndedMessage();
     void drawCursor();
     
