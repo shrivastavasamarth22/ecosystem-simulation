@@ -95,7 +95,7 @@ int main() {
 
         // --- Update Camera System ---
         float camera_delta_time = cameraClock.restart().asSeconds();
-        renderer.update(camera_delta_time);
+        renderer.update(camera_delta_time, &world.getEntityManager());
 
         // --- Drawing Phase ---
         renderer.clear(sf::Color(100, 149, 237)); // Cornflower Blue

@@ -94,7 +94,8 @@ void GraphicsRenderer::display() {
     m_window.display();
 }
 
-void GraphicsRenderer::update(float delta_time) {
+void GraphicsRenderer::update(float delta_time, const EntityManager* entityManager) {
+    m_camera->updateFollowMode(entityManager);
     m_camera->update(delta_time);
 }
 

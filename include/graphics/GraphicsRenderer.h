@@ -24,7 +24,7 @@ public:
     void handleEvents(const EntityManager* entityManager = nullptr);
     void clear(const sf::Color& color = sf::Color::Black);
     void display();
-    void update(float delta_time);
+    void update(float delta_time, const EntityManager* entityManager = nullptr);
 
     void drawWorld(const World& world);
     void drawEntities(const EntityManager& entityManager, float animation_progress);
