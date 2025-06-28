@@ -195,10 +195,10 @@ void UIManager::drawEntityDetailPanel(sf::RenderWindow& window, const EntityMana
     sf::View ui_view(sf::FloatRect(0, 0, window.getSize().x, window.getSize().y));
     window.setView(ui_view);
     
-    // Panel dimensions and position (right side of screen)
-    float panel_width = 400.0f;  // Increased width
-    float panel_height = 500.0f; // Increased height
-    float panel_x = window.getSize().x - panel_width - 20.0f; // Right side with margin
+    // Panel dimensions and position (right side of screen, moved left)
+    float panel_width = 450.0f;  // Increased width
+    float panel_height = 750.0f; // Extended height for more spacing
+    float panel_x = window.getSize().x - panel_width - 100.0f; // Moved further left (was 20.0f)
     float panel_y = 20.0f;
     
     // Draw semi-transparent background panel
@@ -222,6 +222,7 @@ void UIManager::drawEntityDetailPanel(sf::RenderWindow& window, const EntityMana
     // Entity information
     float text_y = panel_y + 60;
     float line_spacing = 30; // Increased spacing
+    float section_spacing = 20; // Additional spacing between sections
     
     // Helper lambda for drawing info lines
     auto drawInfoLine = [&](const std::string& label, const std::string& value) {
@@ -235,25 +236,60 @@ void UIManager::drawEntityDetailPanel(sf::RenderWindow& window, const EntityMana
         text_y += line_spacing;
     };
     
+    // Helper lambda for drawing section headers
+    auto drawSectionHeader = [&](const std::string& header) {
+        text_y += section_spacing; // Add spacing before each section
+        sf::Text header_text;
+        header_text.setFont(m_font);
+        header_text.setString("--- " + header + " ---");
+        header_text.setCharacterSize(18);
+        header_text.setFillColor(sf::Color(200, 200, 100)); // Light yellow
+        header_text.setPosition(panel_x + 15, text_y);
+        window.draw(header_text);
+        text_y += line_spacing;
+    };
+    
     // Basic Info
+    drawSectionHeader("Basic Info");
     drawInfoLine("Type", getAnimalTypeString(entityManager.type[selected_id]));
     drawInfoLine("Position", "(" + std::to_string(entityManager.x[selected_id]) + ", " + std::to_string(entityManager.y[selected_id]) + ")");
-    drawInfoLine("Age", std::to_string(entityManager.age[selected_id]));
+    drawInfoLine("Age", std::to_string(entityManager.age[selected_id]) + " turns (" + getAgeStage(entityManager.age[selected_id], entityManager.prime_age[selected_id]) + ")");
     
     // Health & Energy
-    text_y += 15; // Extra spacing
-    drawInfoLine("Health", std::to_string(static_cast<int>(entityManager.health[selected_id])) + "/" + std::to_string(static_cast<int>(entityManager.max_health[selected_id])));
-    drawInfoLine("Energy", std::to_string(static_cast<int>(entityManager.energy[selected_id])) + "/" + std::to_string(static_cast<int>(entityManager.max_energy[selected_id])));
+    drawSectionHeader("Health & Energy");
+    drawInfoLine("Health", std::to_string(static_cast<int>(entityManager.health[selected_id])) + "/" + std::to_string(static_cast<int>(entityManager.max_health[selected_id])) + " (" + getHealthCondition(entityManager.health[selected_id], entityManager.max_health[selected_id]) + ")");
+    drawInfoLine("Energy", std::to_string(static_cast<int>(entityManager.energy[selected_id])) + "/" + std::to_string(static_cast<int>(entityManager.max_energy[selected_id])) + " (" + getEnergyCondition(entityManager.energy[selected_id], entityManager.max_energy[selected_id]) + ")");
+    drawInfoLine("Recovery", "+" + std::to_string(entityManager.turns_since_damage[selected_id]) + " turns");
     
-    // Stats
-    text_y += 15; // Extra spacing
-    drawInfoLine("Damage", std::to_string(static_cast<int>(entityManager.current_damage[selected_id])));
-    drawInfoLine("Speed", std::to_string(static_cast<int>(entityManager.current_speed[selected_id])));
-    drawInfoLine("Sight", std::to_string(static_cast<int>(entityManager.current_sight_radius[selected_id])));
+    // Current vs Base Stats (shows aging/hunger effects)
+    drawSectionHeader("Current Stats");
+    drawInfoLine("Damage", std::to_string(static_cast<int>(entityManager.current_damage[selected_id])) + " (base: " + std::to_string(static_cast<int>(entityManager.base_damage[selected_id])) + ")");
+    drawInfoLine("Speed", std::to_string(static_cast<int>(entityManager.current_speed[selected_id])) + " (base: " + std::to_string(static_cast<int>(entityManager.base_speed[selected_id])) + ")");
+    drawInfoLine("Sight", std::to_string(static_cast<int>(entityManager.current_sight_radius[selected_id])) + " (base: " + std::to_string(static_cast<int>(entityManager.base_sight_radius[selected_id])) + ")");
     
-    // AI State
-    text_y += 15; // Extra spacing
-    drawInfoLine("AI State", getAIStateString(entityManager.state[selected_id]));
+    // Life Cycle Information
+    drawSectionHeader("Life Cycle");
+    drawInfoLine("Prime Age", std::to_string(entityManager.prime_age[selected_id]) + " turns");
+    drawInfoLine("Nutritional Value", std::to_string(static_cast<int>(entityManager.base_nutritional_value[selected_id])));
+    drawInfoLine("Age Penalties", entityManager.age[selected_id] > entityManager.prime_age[selected_id] ? "Active" : "None");
+    
+    // AI State & Target
+    drawSectionHeader("AI & Behavior");
+    drawInfoLine("Current State", getAIStateString(entityManager.state[selected_id]));
+    
+    // Target information (if has target)
+    if (entityManager.target_id[selected_id] < entityManager.getEntityCount() && 
+        entityManager.is_alive[entityManager.target_id[selected_id]]) {
+        size_t target_id = entityManager.target_id[selected_id];
+        drawInfoLine("Target", getAnimalTypeString(entityManager.type[target_id]) + " at (" + 
+                     std::to_string(entityManager.x[target_id]) + ", " + 
+                     std::to_string(entityManager.y[target_id]) + ")");
+    } else if (entityManager.target_x[selected_id] != -1 && entityManager.target_y[selected_id] != -1) {
+        drawInfoLine("Target Location", "(" + std::to_string(entityManager.target_x[selected_id]) + ", " + 
+                     std::to_string(entityManager.target_y[selected_id]) + ")");
+    } else {
+        drawInfoLine("Target", "None");
+    }
 }
 
 std::string UIManager::getAnimalTypeString(AnimalType type) {
@@ -275,4 +311,30 @@ std::string UIManager::getAIStateString(AIState state) {
         case AIState::PACK_HUNTING: return "Pack Hunting";
         default: return "Unknown";
     }
+}
+
+std::string UIManager::getHealthCondition(float health, float max_health) {
+    float health_percent = (health / max_health) * 100.0f;
+    if (health_percent >= 80.0f) return "Excellent";
+    if (health_percent >= 60.0f) return "Good";
+    if (health_percent >= 40.0f) return "Injured";
+    if (health_percent >= 20.0f) return "Severely Injured";
+    return "Critical";
+}
+
+std::string UIManager::getEnergyCondition(float energy, float max_energy) {
+    float energy_percent = (energy / max_energy) * 100.0f;
+    if (energy_percent >= 80.0f) return "Well Fed";
+    if (energy_percent >= 60.0f) return "Satisfied";
+    if (energy_percent >= 40.0f) return "Hungry";
+    if (energy_percent >= 20.0f) return "Very Hungry";
+    return "Starving";
+}
+
+std::string UIManager::getAgeStage(int age, int prime_age) {
+    if (age < prime_age / 2) return "Young";
+    if (age < prime_age) return "Adult";
+    if (age < prime_age * 1.5f) return "Mature";
+    if (age < prime_age * 2.0f) return "Aging";
+    return "Elder";
 }

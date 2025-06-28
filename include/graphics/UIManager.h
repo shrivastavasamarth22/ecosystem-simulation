@@ -26,6 +26,9 @@ private:
     // Helper methods for entity detail panel
     std::string getAnimalTypeString(AnimalType type);
     std::string getAIStateString(AIState state);
+    std::string getHealthCondition(float health, float max_health);
+    std::string getEnergyCondition(float energy, float max_energy);
+    std::string getAgeStage(int age, int prime_age);
 };
 
 #endif // UIMANAGER_H
