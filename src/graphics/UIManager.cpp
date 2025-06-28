@@ -1,4 +1,5 @@
 #include "graphics/UIManager.h"
+#include "common/AnimalConfig.h"
 #include <iostream>
 #include <sstream>
 
@@ -277,18 +278,25 @@ void UIManager::drawEntityDetailPanel(sf::RenderWindow& window, const EntityMana
     drawSectionHeader("AI & Behavior");
     drawInfoLine("Current State", getAIStateString(entityManager.state[selected_id]));
     
-    // Target information (if has target)
-    if (entityManager.target_id[selected_id] < entityManager.getEntityCount() && 
-        entityManager.is_alive[entityManager.target_id[selected_id]]) {
-        size_t target_id = entityManager.target_id[selected_id];
-        drawInfoLine("Target", getAnimalTypeString(entityManager.type[target_id]) + " at (" + 
-                     std::to_string(entityManager.x[target_id]) + ", " + 
-                     std::to_string(entityManager.y[target_id]) + ")");
-    } else if (entityManager.target_x[selected_id] != -1 && entityManager.target_y[selected_id] != -1) {
-        drawInfoLine("Target Location", "(" + std::to_string(entityManager.target_x[selected_id]) + ", " + 
-                     std::to_string(entityManager.target_y[selected_id]) + ")");
-    } else {
-        drawInfoLine("Target", "None");
+    // Family info for carnivores
+    if (entityManager.type[selected_id] == AnimalType::CARNIVORE) {
+        if (entityManager.parent_id[selected_id] != INVALID_PARENT) {
+            size_t parent_id = entityManager.parent_id[selected_id];
+            if (parent_id < entityManager.getEntityCount() && entityManager.is_alive[parent_id]) {
+                drawInfoLine("Parent", "Carnivore at (" + std::to_string(entityManager.x[parent_id]) + ", " + std::to_string(entityManager.y[parent_id]) + ")");
+            } else {
+                drawInfoLine("Parent", "Deceased");
+            }
+            
+            // Show independence status
+            if (entityManager.age[selected_id] < CARNIVORE_INDEPENDENCE_AGE) {
+                drawInfoLine("Status", "Protected offspring (" + std::to_string(CARNIVORE_INDEPENDENCE_AGE - entityManager.age[selected_id]) + " turns until independence)");
+            } else {
+                drawInfoLine("Status", "Independent");
+            }
+        } else {
+            drawInfoLine("Family", "No parent tracked");
+        }
     }
 }
 

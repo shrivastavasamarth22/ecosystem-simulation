@@ -34,15 +34,18 @@ namespace ReproductionSystem {
             if (data.age[i] > min_reproduce_age && data.energy[i] > data.max_energy[i] * reproduce_energy_percentage) {
                 data.energy[i] -= reproduce_cost;
                 // Create a new entity of the same type
+                size_t offspring_id;
                 switch (data.type[i]) {
                     case AnimalType::HERBIVORE:
-                        data.createHerbivore(data.x[i], data.y[i]);
+                        offspring_id = data.createHerbivore(data.x[i], data.y[i]);
                         break;
                     case AnimalType::CARNIVORE:
-                        data.createCarnivore(data.x[i], data.y[i]);
+                        offspring_id = data.createCarnivore(data.x[i], data.y[i]);
+                        // Set parent tracking for carnivores to prevent family conflicts
+                        data.parent_id[offspring_id] = i;
                         break;
                     case AnimalType::OMNIVORE:
-                        data.createOmnivore(data.x[i], data.y[i]);
+                        offspring_id = data.createOmnivore(data.x[i], data.y[i]);
                         break;
                 }
             }

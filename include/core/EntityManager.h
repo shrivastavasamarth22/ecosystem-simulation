@@ -5,6 +5,9 @@
 #include <vector>
 #include <cstddef> // For size_t
 
+// Family relationship constants
+const size_t INVALID_PARENT = static_cast<size_t>(-1);
+
 class EntityManager {
 public:
     EntityManager();
@@ -53,6 +56,10 @@ public:
 
     // Life Cycle
     std::vector<int>            age;
+    
+    // Family Relationships  
+    std::vector<size_t>         parent_id;        // ID of parent entity (INVALID_ENTITY if none)
+    std::vector<int>            independence_age; // Age at which offspring becomes independent from parent
 
     // --- NEW: Nutritional Value Stats ---
     std::vector<float>          base_nutritional_value;

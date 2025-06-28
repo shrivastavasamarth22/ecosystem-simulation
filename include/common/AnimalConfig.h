@@ -13,7 +13,8 @@ const float HERBIVORE_REPRODUCE_ENERGY_PERCENTAGE = 0.75f;
 const int HERBIVORE_MIN_REPRODUCE_AGE = 3;
 const int HERD_DETECTION_RADIUS = 10;
 const int HERD_BONUS_RADIUS = 3;
-const float HERD_HP_BONUS_PER_MEMBER = 5.0f;
+const float HERD_AGING_REDUCTION_PER_MEMBER = 0.08f; // 8% aging reduction per herd member
+const float MAX_HERD_AGING_REDUCTION = 0.5f;         // Maximum 50% aging reduction
 const float HERBIVORE_FOOD_SEEK_THRESHOLD_PERCENTAGE = 0.75f;
 
 // Herbivore nutritional value constants
@@ -61,5 +62,8 @@ const float OMNIVORE_BASE_NUTRITIONAL_VALUE = 35.0f;
 const int OMNIVORE_PRIME_AGE = 15;
 const float OMNIVORE_PENALTY_PER_YEAR = 1.0f;
 const float OMNIVORE_MINIMUM_VALUE = 10.0f;
+
+// --- CARNIVORE FAMILY PROTECTION ---
+const int CARNIVORE_INDEPENDENCE_AGE = 8;  // Young carnivores are protected from parents for 8 turns
 
 #endif // ANIMAL_CONFIG_H

@@ -9,20 +9,7 @@ namespace AISystem {
     void run(EntityManager& data, const World& world) {
         size_t num_entities = data.getEntityCount();
 
-        // --- PHASE 1: Calculate herd bonuses (SINGLE-THREADED to avoid race conditions) ---
-        for (size_t i = 0; i < num_entities; ++i) {
-            if (!data.is_alive[i] || data.type[i] != AnimalType::HERBIVORE) continue;
-            
-            // Calculate herd bonus for herbivores
-            auto nearby_friends = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_BONUS_RADIUS, AnimalType::HERBIVORE);
-            int herd_size = nearby_friends.size();
-            
-            float hp_bonus = (herd_size > 1) ? (herd_size - 1) * HERD_HP_BONUS_PER_MEMBER : 0.0f;
-            float old_max_health = data.max_health[i];
-            data.max_health[i] = data.base_max_health[i] + hp_bonus;
-            if (data.max_health[i] > old_max_health) data.health[i] += (data.max_health[i] - old_max_health);
-            data.health[i] = std::min(data.health[i], data.max_health[i]);
-        }
+        // --- PHASE 1: No longer needed - herd benefits moved to MetabolismSystem ---
 
         // --- PHASE 2: AI Decision Making (PARALLELIZED) ---
         // Each thread processes a chunk of entities.
@@ -181,6 +168,18 @@ namespace AISystem {
                             
                             for (size_t potential_rival_id : nearby_rival_carnivores) {
                                 if (potential_rival_id != i) { // Exclude self
+                                    // NEW: Check for family relationships - don't attack parents or young offspring
+                                    bool is_family = false;
+                                    if (data.parent_id[i] == potential_rival_id) {
+                                        // Don't attack my parent
+                                        is_family = true;
+                                    } else if (data.parent_id[potential_rival_id] == i && data.age[potential_rival_id] < CARNIVORE_INDEPENDENCE_AGE) {
+                                        // Don't attack my young offspring
+                                        is_family = true;
+                                    }
+                                    
+                                    if (is_family) continue; // Skip family members
+                                    
                                     // Calculate distance to this rival
                                     int dx = data.x[i] - data.x[potential_rival_id];
                                     int dy = data.y[i] - data.y[potential_rival_id];

@@ -1,5 +1,6 @@
 #include "systems/MetabolismSystem.h"
 #include "common/AnimalConfig.h"
+#include "common/AnimalTypes.h"
 #include <algorithm>
 
 namespace MetabolismSystem {
@@ -19,7 +20,7 @@ namespace MetabolismSystem {
         }
     }
 
-    void run(EntityManager& data) {
+    void run(EntityManager& data, const World& world) {
         size_t num_entities = data.getEntityCount();
 
         // --- Parallelize the loop using OpenMP ---
@@ -44,13 +45,31 @@ namespace MetabolismSystem {
                 continue; // Skip further processing for this dead entity
             }
 
-            // Calculate aging penalties for stats
+            // Reset max_health to base (no more permanent herd health bonuses)
+            data.max_health[i] = data.base_max_health[i];
+            // Ensure current health doesn't exceed new max_health
+            data.health[i] = std::min(data.health[i], data.max_health[i]);
+            
+            // Calculate aging penalties for stats (with herd benefits for herbivores)
             float age_penalty_factor = 1.0f; // Start with no penalty
             if (data.age[i] > data.prime_age[i]) {
                 // Calculate how many years past prime age
                 int years_past_prime = data.age[i] - data.prime_age[i];
                 // Apply penalty per year (convert to percentage reduction)
                 float total_penalty_percentage = years_past_prime * (data.penalty_per_year[i] / 100.0f);
+                
+                // NEW: Apply herd aging reduction for herbivores
+                if (data.type[i] == AnimalType::HERBIVORE) {
+                    auto nearby_friends = world.getAnimalsNear(data, data.x[i], data.y[i], HERD_BONUS_RADIUS, AnimalType::HERBIVORE);
+                    int herd_size = nearby_friends.size();
+                    
+                    if (herd_size > 1) {
+                        // Calculate aging reduction (exclude self from count)
+                        float aging_reduction = std::min(MAX_HERD_AGING_REDUCTION, (herd_size - 1) * HERD_AGING_REDUCTION_PER_MEMBER);
+                        total_penalty_percentage *= (1.0f - aging_reduction);
+                    }
+                }
+                
                 // Cap penalty at 50% to prevent stats from becoming too low
                 total_penalty_percentage = std::min(total_penalty_percentage, 0.5f);
                 age_penalty_factor = 1.0f - total_penalty_percentage;

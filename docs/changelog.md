@@ -1,5 +1,50 @@
 # Changelog
 
+## v2.12: Entity Detail Cam & Critical Bug Fixes
+**Date:** June 2025
+### Entity Detail Camera System
+- **Interactive Entity Inspection:** Comprehensive entity analysis system with click-to-select functionality
+  - Click any entity to select it and enter detail view mode with smooth camera follow
+  - Real-time information panel displays comprehensive entity data including health, energy, AI state, family relationships, and detailed stats
+  - Color-coded information with condition descriptions (Excellent/Good/Injured health, Well Fed/Hungry/Starving energy)
+  - Section-organized display with basic info, health & energy, current stats, life cycle, and AI & behavior
+  - Entity positioned on left side of screen with information panel on right for optimal layout
+- **Camera Follow Mode:** Advanced camera tracking with smooth positioning and zoom control
+  - Smooth camera transitions when entering/exiting follow mode
+  - Entity positioned at left third of screen for optimal information panel visibility
+  - Manual camera dragging or clicking empty space exits follow mode naturally
+  - Selection indicators with pulsing visual effects and inner highlight circles
+- **UI Integration:** Seamless integration with existing camera and rendering systems
+  - Dynamic panel sizing and positioning to prevent screen overflow
+  - Real-time data updates showing current entity state and conditions
+  - Family relationship display for carnivores showing parent/offspring status and independence countdown
+
+### Critical Bug Fixes
+- **Parent-Child Protection System:** Fixed critical carnivore family conflict bug
+  - **Root Cause:** Carnivores would immediately attack their own newborn offspring due to territorial behavior
+  - **Solution:** Added parent tracking system (`parent_id` field) and family conflict prevention in AI system
+  - **Implementation:** Carnivore offspring tracked until independence age (8 turns), preventing parent attacks during vulnerable period
+  - **Scope:** Only applied to carnivores as they're the only species with territorial behavior that attacks same-species entities
+- **Percentage-Based Aging Reduction:** Completely redesigned herd bonus system to prevent health inflation
+  - **Root Cause:** Herd health bonuses (+5 HP per member) were permanent additions to max_health, creating immortal 200+ health herbivores
+  - **Solution:** Replaced flat health bonuses with percentage-based aging penalty reduction (8% per herd member, max 50%)
+  - **Implementation:** Moved herd calculations from AISystem to MetabolismSystem for proper aging integration
+  - **Benefits:** Maintains strategic herding advantages while ensuring natural lifespans and preventing infinite health scaling
+
+### System Architecture Improvements
+- **EntityManager Enhancement:** Added family relationship tracking with minimal performance impact
+  - `parent_id` field for tracking carnivore family relationships
+  - `INVALID_PARENT` constant for entities without tracked parents
+  - Integration into entity creation, destruction, and data management systems
+- **MetabolismSystem Redesign:** Enhanced aging system with sophisticated herd benefit calculations
+  - Herd size calculation moved from AISystem for proper integration with aging penalties
+  - Percentage-based aging reduction prevents extreme health values while maintaining social benefits
+  - Max health reset to base values each turn to prevent permanent inflation
+- **ReproductionSystem Enhancement:** Added parent tracking for newly created carnivore offspring
+  - Automatic parent-child relationship establishment during reproduction
+  - Proper initialization of family tracking data for new entities
+  - Integration with existing entity creation and animation state initialization
+
 ## v2.11: Animation System & Reproduction Bug Fixes
 **Date:** June 2025
 ### Animation System Implementation

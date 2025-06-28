@@ -22,7 +22,7 @@ The simulation uses 6 main systems that process entities in a specific order, ea
    - Prevents newly created entities from appearing to "teleport" from origin
 1. **AI System** (`AISystem.cpp/.h`) - Determines entity behavior states and targets (parallelized)
    - Handles target validation and state transitions
-   - Manages herd bonus calculations in thread-safe manner
+   - No longer calculates herd health bonuses (moved to MetabolismSystem)
    - Implements pack hunting logic with proper ally detection
 2. **Movement System** (`MovementSystem.cpp/.h`) - Handles entity movement with diagonal pathfinding (parallelized)
    - Focuses purely on movement without state modification
@@ -31,18 +31,23 @@ The simulation uses 6 main systems that process entities in a specific order, ea
 3. **Action System** (`ActionSystem.cpp/.h`) - Processes combat, resource consumption, state transitions (sequential)
    - Thread-sensitive operations requiring sequential execution
    - Handles all entity interactions and state changes
-4. **Metabolism System** (`MetabolismSystem.cpp/.h`) - Handles aging, hunger, health regeneration (parallelized)
-   - Implements comprehensive aging penalties for stats after prime age
+4. **Metabolism System** (`MetabolismSystem.cpp/.h`) - Handles aging, hunger, health regeneration, herd benefits (parallelized)
+   - Implements comprehensive aging penalties with herd-based aging reduction for herbivores
+   - Calculates percentage-based aging reduction (8% per herd member, max 50%)
+   - Resets max_health to base values to prevent health inflation
    - Uses species-specific constants for realistic lifecycle dynamics
    - Manages health regeneration and energy consumption
-5. **Reproduction System** (`ReproductionSystem.cpp/.h`) - Manages entity reproduction (sequential)
+5. **Reproduction System** (`ReproductionSystem.cpp/.h`) - Manages entity reproduction with family tracking (sequential)
    - Handles entity creation and population dynamics
+   - Tracks parent-child relationships for carnivores to prevent family conflicts
    - Properly initializes animation state for newly created entities
 
 ### Graphics & Rendering System
 - **SFML-based rendering** with texture management and sprite drawing
-- **Interactive camera system** with smooth zoom, pan, and reset functionality
-- **Enhanced UI system** with sprite-based counters and semi-transparent backgrounds
+- **Interactive camera system** with smooth zoom, pan, reset functionality, and entity follow mode
+- **Entity Detail Camera System** with click-to-select functionality and real-time information panels
+- **Enhanced UI system** with sprite-based counters, semi-transparent backgrounds, and detailed entity inspection
+- **Selection Indicators** with pulsing visual effects and color-coded information display
 - **Asset management** for textures, fonts, and audio files
 - **View separation** between world rendering (camera view) and UI overlay (fixed view)
 - **Animation Interpolation**: Smooth position interpolation with quadratic easing for professional visual quality
@@ -110,7 +115,10 @@ Input Events → Event Handler → Camera System Updates → Rendering System �
 - **Memory pre-allocation** reduces dynamic allocations in spatial grid and rendering systems
 - **Smooth interpolation** provides responsive user experience without performance cost
 
-## Recent Performance Optimizations (v2.8-v2.10)
+## Recent Performance Optimizations & Major Features (v2.8-v2.12)
+- **Entity Detail Camera System (v2.12)**: Interactive entity inspection with click-to-select, camera follow, and comprehensive real-time information panels
+- **Family Protection System (v2.12)**: Parent-child relationship tracking for carnivores prevents unnatural family conflicts
+- **Percentage-Based Aging Reduction (v2.12)**: Redesigned herd benefits from health inflation to sophisticated aging penalty reduction
 - **Advanced AI Behavior Systems**: Implemented distance-based target selection and energy-to-distance optimization
 - **Enhanced Food Seeking**: Sophisticated foraging algorithms with proximity bonuses and realistic travel limitations
 - **Combat System Reliability**: Euclidean distance-based combat ranges compatible with diagonal movement patterns
@@ -126,3 +134,40 @@ Input Events → Event Handler → Camera System Updates → Rendering System �
 - **Asset Management**: Resized textures from 1024×1024 to optimal sizes, reducing memory by 95%
 - **Behavioral Systems**: Fixed infinite loops and improved target validation for more efficient processing
 - **Memory Efficiency**: Reduced allocation overhead and improved cache locality throughout the codebase
+
+## Entity Detail Camera System
+
+### Interactive Entity Inspection
+The Entity Detail Camera System provides comprehensive entity analysis through interactive selection:
+
+- **Click-to-Select**: Click any entity to select it and enter detail view mode
+- **Camera Follow**: Smooth camera tracking positions the selected entity on the left side of the screen
+- **Real-time Information Panel**: Comprehensive entity data displayed on the right side including:
+  - Basic information (type, position, age, life stage)
+  - Health and energy status with condition descriptions
+  - Current vs base stats showing aging/hunger effects
+  - Life cycle information (prime age, nutritional value, aging penalties)
+  - AI state and current target information
+  - Family relationships (for carnivores showing parent/offspring status)
+
+### Family Relationship System
+- **Parent Tracking**: Carnivores track parent-child relationships using `parent_id` field
+- **Independence System**: Young carnivores are protected from parents until independence age (8 turns)
+- **Family Conflict Prevention**: AI system excludes family members from territorial targeting
+- **UI Integration**: Entity detail panel shows family status and independence countdown
+
+### Camera Integration
+- **Smooth Follow Mode**: Camera smoothly tracks selected entity movement
+- **Positioning Logic**: Entity positioned on left third of screen for optimal information panel layout
+- **Exit Conditions**: Selection cleared by clicking empty space or manual camera dragging
+- **Visual Indicators**: Pulsing selection circles with inner highlight effects
+
+## Performance Considerations
+- **Data-oriented design** maximizes cache efficiency with Structure of Arrays (SoA) pattern
+- **Parallel processing** utilizes multiple CPU cores via OpenMP for AI, Movement, and Metabolism systems
+- **Dynamic spatial partitioning** automatically optimizes cell sizes based on world dimensions and entity density
+- **View frustum culling** eliminates rendering of off-screen content, providing 80-95% performance improvement for large worlds
+- **Optimized asset pipeline** uses appropriately-sized textures with fixed scaling to minimize GPU memory usage
+- **Efficient target validation** prevents processing of dead or invalid entities across all systems
+- **Memory pre-allocation** reduces dynamic allocations in spatial grid and rendering systems
+- **Smooth interpolation** provides responsive user experience without performance cost

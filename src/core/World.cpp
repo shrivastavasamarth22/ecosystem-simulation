@@ -203,7 +203,7 @@ void World::update() {
 
     // Phase 4: Post-Action Consequences
     // MetabolismSystem::run reads results of actions (damage, energy)
-    MetabolismSystem::run(m_entityManager);
+    MetabolismSystem::run(m_entityManager, *this);
 
     // Cleanup must happen after actions and metabolism finalize who is dead
     // This is a single-threaded operation that modifies the entity list structure.

@@ -4,6 +4,12 @@ A high-performance C++ simulation that models complex predator-prey and **resour
 
 ## Latest Updates
 
+- **v2.12: Entity Detail Cam & Critical Bug Fixes**
+    - **Entity Detail Camera System:** Implemented comprehensive entity inspection feature - click any entity to enter detail view mode with camera follow and real-time information panel showing health, energy, AI state, family relationships, and detailed stats.
+    - **Parent-Child Protection for Carnivores:** Fixed critical bug where carnivores would immediately attack their own newborn offspring. Added parent tracking system that prevents family conflicts until offspring reach independence age (8 turns).
+    - **Percentage-Based Aging Reduction:** Completely redesigned herd bonus system from flat health increases to sophisticated aging reduction. Herbivores in herds now receive 8% aging penalty reduction per herd member (max 50%), preventing immortal 200+ health herbivores while maintaining strategic herding benefits.
+    - **Interactive Entity Selection:** Advanced selection system with visual indicators, smooth camera follow mode, and comprehensive real-time data display including family relationships, life stage, and condition assessments.
+    - **Enhanced UI Polish:** Color-coded entity information, section-organized detail panels, and intuitive interaction design with click-to-exit functionality.
 - **v2.11: Animation System & Reproduction Bug Fixes**
     - **Smooth Animation System:** Implemented position interpolation with quadratic easing for natural entity movement, eliminating jerky transitions and providing professional visual polish.
     - **Animation State Capture:** Added `AnimationSystem` that captures previous positions before each simulation update, enabling smooth interpolation between turns.
@@ -47,26 +53,30 @@ Entities in this simulation perceive their world, actively seek out food resourc
 ### Ecological & Social Dynamics
 - **Resource System:** The world grid contains consumable, regenerating resources (starting with "Grass" and "Berries"). Entities must actively seek out specific resource types and consume them via the Action System to gain energy based on the resource's nutritional value. Over-consumption leads to local depletion, driving migration and starvation.
 - **Age-Based Nutritional Value:** The energy gained from a kill is dynamically calculated based on the age and type of the killed entity, making older, weaker ones a lower-reward target and influencing predator hunting strategies.
-- **Intelligent Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out the closest herd members to form optimal groups. Herd bonus calculations are processed in a thread-safe manner to prevent race conditions while maintaining performance.
-- **Herd Health Bonus:** Being in a herd grants a dynamic bonus to Max HP, representing "safety in numbers" and making herd members tougher targets for predators.
+- **Intelligent Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out the closest herd members to form optimal groups. Herd aging reduction calculations are processed in a thread-safe manner to prevent race conditions while maintaining performance.
+- **Herd Aging Reduction:** Being in a herd provides percentage-based aging penalty reduction (8% per member, max 50%), representing "safety in numbers" and community wisdom. This prevents health inflation while maintaining strategic herding benefits and ensuring natural lifespans.
+- **Family Protection System:** Carnivores track parent-child relationships to prevent attacking their own offspring until independence age, eliminating unnatural family conflicts while maintaining territorial behavior against non-relatives.
 - **Strategic Hunting with Distance Optimization:** Carnivore entities hunt Herbivores (primary prey) or strategically hunt lone/small groups of Omnivores if they are not in a threatening pack size (`CHASING` state). Omnivores hunt Herbivores and can form coordinated packs to hunt powerful Carnivores (`PACK_HUNTING` state), with all hunting behaviors using closest-target selection for optimal engagement.
-- **Enhanced Territorial Behavior:** Carnivores exhibit territoriality and will engage in lethal combat (`CHASING` state leading to combat) with the closest rival Carnivores within their territorial radius. Combat uses Euclidean distance for realistic engagement ranges compatible with diagonal movement. Cannibalism does not provide energy gain in territorial fights.
+- **Enhanced Territorial Behavior:** Carnivores exhibit territoriality and will engage in lethal combat (`CHASING` state leading to combat) with the closest rival Carnivores within their territorial radius, excluding family members. Combat uses Euclidean distance for realistic engagement ranges compatible with diagonal movement. Cannibalism does not provide energy gain in territorial fights.
 - **Consistent Threat Response:** All predator-prey interactions use full sight radius for threat detection, allowing animals to flee from any visible danger rather than waiting until threats are dangerously close.
 - **Natural Population Control:** Complex interactions between resource availability, predator-prey relationships, aging, hunger, starvation death, and intra-species conflict provide dynamic mechanisms for population booms, busts, and cycles.
 
 ### Visualization & User Interface
 - **SFML Graphical Window:** Replaces console output with a dedicated window for visualization.
 - **Smooth Animation System:** Professional-grade position interpolation with quadratic easing creates fluid entity movement between simulation turns, providing cinematic visual quality.
+- **Entity Detail Camera System:** Interactive entity inspection with click-to-select, camera follow mode, and comprehensive real-time information panels showing health, energy, AI state, family relationships, and detailed stats.
 - **Textured Grid Rendering:** Draws the world grid using different textures for empty tiles and different resource types (Grass, Berries).
-- **Textured Entity Rendering:** Draws living entities as sprites using textures corresponding to their species type with smooth animated movement.
-- **Enhanced UI System:** Real-time overlay displaying simulation statistics with sprite-based counters and semi-transparent backgrounds for better readability.
-- **Interactive Camera System:** Full camera control with smooth zoom (mouse wheel), pan (click & drag), reset functionality (R key), and intelligent bounds constraint.
+- **Textured Entity Rendering:** Draws living entities as sprites using textures corresponding to their species type with smooth animated movement and selection indicators.
+- **Enhanced UI System:** Real-time overlay displaying simulation statistics with sprite-based counters, semi-transparent backgrounds, and interactive entity detail panels with color-coded information.
+- **Interactive Camera System:** Full camera control with smooth zoom (mouse wheel), pan (click & drag), reset functionality (R key), entity follow mode, and intelligent bounds constraint.
 - **Simulation State Management:** Visual pause indicator, simulation end notification with prominent center-screen message.
 - **Background Music:** Plays an MP3 file on loop in the background for atmospheric effect.
 
 ### Controls & Interaction
 - **Mouse Wheel:** Smooth zoom in/out with intelligent limits
 - **Left Click + Drag:** Pan camera around the simulation world
+- **Left Click on Entity:** Select entity for detailed inspection and camera follow
+- **Left Click on Empty Space:** Deselect entity and return to normal camera mode
 - **R Key:** Reset camera to optimal view showing entire world
 - **P Key:** Pause/unpause simulation
 - **Escape Key:** Close simulation window

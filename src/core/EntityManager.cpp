@@ -38,6 +38,7 @@ void EntityManager::clear() {
     current_sight_radius.clear();
     current_speed.clear();
     age.clear();
+    parent_id.clear();
     base_nutritional_value.clear();
     prime_age.clear();
     penalty_per_year.clear();
@@ -71,6 +72,7 @@ size_t EntityManager::createEntity() {
     current_sight_radius.push_back(0.0f);
     current_speed.push_back(0.0f);
     age.push_back(0);
+    parent_id.push_back(INVALID_PARENT);     // No parent initially
     base_nutritional_value.push_back(0.0f);
     prime_age.push_back(0);
     penalty_per_year.push_back(0.0f);
@@ -111,6 +113,7 @@ void EntityManager::destroyEntity(size_t index) {
         current_sight_radius[index] = current_sight_radius[last_index];
         current_speed[index] = current_speed[last_index];
         age[index] = age[last_index];
+        parent_id[index] = parent_id[last_index];
         base_nutritional_value[index] = base_nutritional_value[last_index];
         prime_age[index] = prime_age[last_index];
         penalty_per_year[index] = penalty_per_year[last_index];
@@ -141,6 +144,7 @@ void EntityManager::destroyEntity(size_t index) {
     current_sight_radius.pop_back();
     current_speed.pop_back();
     age.pop_back();
+    parent_id.pop_back();
     base_nutritional_value.pop_back();
     prime_age.pop_back();
     penalty_per_year.pop_back();
