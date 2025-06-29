@@ -60,49 +60,135 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
 }
 
 void World::generateBiomes() {
-    // 1. Define Biome Seed Points
-    const int num_biome_seeds = 150; // Increased for more varied terrain and better water visibility
-    std::vector<std::pair<sf::Vector2i, const BiomeType*>> biome_seeds;
-
-    std::uniform_int_distribution<int> distX(0, width - 1);
-    std::uniform_int_distribution<int> distY(0, height - 1);
+    // Two-phase approach: Large regions first, then WFC for boundaries
+    
+    // Phase 1: Generate large biome regions using a coarser grid
+    const int region_size = 15; // Each region is 15x15 tiles
+    const int regions_x = (width + region_size - 1) / region_size;
+    const int regions_y = (height + region_size - 1) / region_size;
+    
+    // Create a coarse grid of biome regions
+    std::vector<std::vector<const BiomeType*>> region_grid(regions_y, std::vector<const BiomeType*>(regions_x));
+    
     std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
-
-    for (int i = 0; i < num_biome_seeds; ++i) {
-        sf::Vector2i point(distX(rng), distY(rng));
-        float chance = dist_chance(rng);
-
-        const BiomeType* chosen_biome;
-        if (chance < 0.15f) { // 15% chance for Water (increased for visibility)
-            chosen_biome = &BIOME_WATER;
-        } else if (chance < 0.25f) { // 10% chance for Rocky
-            chosen_biome = &BIOME_ROCKY;
-        } else if (chance < 0.35f) { // 10% chance for Fertile
-            chosen_biome = &BIOME_FERTILE;
-        } else if (chance < 0.50f) { // 15% chance for Forest
-            chosen_biome = &BIOME_FOREST;
-        } else if (chance < 0.75f) { // 25% chance for Grassland
-            chosen_biome = &BIOME_GRASSLAND;
-        } else { // 25% chance for Barren
-            chosen_biome = &BIOME_BARREN;
+    
+    // Assign biomes to regions
+    for (int ry = 0; ry < regions_y; ++ry) {
+        for (int rx = 0; rx < regions_x; ++rx) {
+            float chance = dist_chance(rng);
+            
+            const BiomeType* region_biome;
+            if (chance < 0.15f) {
+                region_biome = &BIOME_WATER;
+            } else if (chance < 0.25f) {
+                region_biome = &BIOME_ROCKY;
+            } else if (chance < 0.35f) {
+                region_biome = &BIOME_FERTILE;
+            } else if (chance < 0.50f) {
+                region_biome = &BIOME_FOREST;
+            } else if (chance < 0.75f) {
+                region_biome = &BIOME_GRASSLAND;
+            } else {
+                region_biome = &BIOME_BARREN;
+            }
+            
+            region_grid[ry][rx] = region_biome;
         }
-        biome_seeds.push_back({point, chosen_biome});
     }
-
-    // 2. Assign each tile to its nearest biome seed (Voronoi Diagram)
-    for (int r = 0; r < height; ++r) {
-        for (int c = 0; c < width; ++c) {
-            float min_dist_sq = -1.0f;
-            const BiomeType* closest_biome = nullptr;
-
-            for (const auto& seed : biome_seeds) {
-                float dist_sq = (seed.first.x - c) * (seed.first.x - c) + (seed.first.y - r) * (seed.first.y - r);
-                if (closest_biome == nullptr || dist_sq < min_dist_sq) {
-                    min_dist_sq = dist_sq;
-                    closest_biome = seed.second;
+    
+    // Phase 2: Apply WFC only near region boundaries for smooth transitions
+    WFCGenerator wfc(width, height, rng);
+    
+    // First, assign base biomes from regions
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int rx = x / region_size;
+            int ry = y / region_size;
+            
+            // Clamp to valid region indices
+            rx = std::min(rx, regions_x - 1);
+            ry = std::min(ry, regions_y - 1);
+            
+            grid[y][x].setBiome(region_grid[ry][rx]);
+        }
+    }
+    
+    // Phase 3: Use WFC to smooth boundaries between different regions
+    for (int y = 1; y < height - 1; ++y) {
+        for (int x = 1; x < width - 1; ++x) {
+            // Check if this tile is near a biome boundary
+            const BiomeType* center_biome = grid[y][x].getBiome();
+            bool near_boundary = false;
+            
+            // Check 3x3 neighborhood for different biomes
+            for (int dy = -1; dy <= 1 && !near_boundary; ++dy) {
+                for (int dx = -1; dx <= 1 && !near_boundary; ++dx) {
+                    if (dx == 0 && dy == 0) continue;
+                    
+                    int nx = x + dx;
+                    int ny = y + dy;
+                    
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        if (grid[ny][nx].getBiome() != center_biome) {
+                            near_boundary = true;
+                        }
+                    }
                 }
             }
-            grid[r][c].setBiome(closest_biome);
+            
+            // If near boundary, use WFC to create natural transition
+            if (near_boundary) {
+                // Get possible transitions based on neighbors
+                std::set<const BiomeType*> neighbor_biomes;
+                for (int dy = -1; dy <= 1; ++dy) {
+                    for (int dx = -1; dx <= 1; ++dx) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            neighbor_biomes.insert(grid[ny][nx].getBiome());
+                        }
+                    }
+                }
+                
+                // Choose a biome that's compatible with neighbors
+                std::vector<const BiomeType*> candidates;
+                for (const BiomeType* candidate : neighbor_biomes) {
+                    bool is_compatible = true;
+                    
+                    // Check if this candidate is compatible with all neighbors
+                    for (int dy = -1; dy <= 1 && is_compatible; ++dy) {
+                        for (int dx = -1; dx <= 1 && is_compatible; ++dx) {
+                            if (dx == 0 && dy == 0) continue;
+                            
+                            int nx = x + dx;
+                            int ny = y + dy;
+                            
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const BiomeType* neighbor = grid[ny][nx].getBiome();
+                                
+                                // Check adjacency rules
+                                auto it = wfc.getAdjacencyRules().find(candidate);
+                                if (it != wfc.getAdjacencyRules().end()) {
+                                    if (it->second.find(neighbor) == it->second.end()) {
+                                        is_compatible = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (is_compatible) {
+                        candidates.push_back(candidate);
+                    }
+                }
+                
+                // Randomly select from compatible candidates
+                if (!candidates.empty()) {
+                    std::uniform_int_distribution<int> candidate_dist(0, candidates.size() - 1);
+                    grid[y][x].setBiome(candidates[candidate_dist(rng)]);
+                }
+            }
         }
     }
 }

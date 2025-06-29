@@ -1,5 +1,46 @@
 # Changelog
 
+## v2.13: Wave Function Collapse Terrain Generation & Enhanced Biome System
+**Date:** June 2025
+### Wave Function Collapse Implementation
+- **WFC Algorithm:** Implemented sophisticated Wave Function Collapse terrain generation replacing Voronoi diagrams
+  - **WFCGenerator Class:** Complete WFC implementation with constraint propagation, entropy-based cell selection, and adjacency rule enforcement
+  - **Adjacency Rules System:** Realistic biome transition rules (water connects to grassland/forest, rocky areas near forests, etc.)
+  - **Constraint Propagation:** Efficient neighboring cell constraint updates when cells collapse to specific biomes
+  - **Robust Fallback:** Graceful fallback to random generation if WFC fails due to constraint conflicts
+
+### Multi-Scale Terrain Generation
+- **Hybrid Generation Approach:** Two-phase system creating coherent biome regions instead of fragmented tiles
+  - **Phase 1 - Large Regions:** 15x15 tile block assignment creating substantial biome areas
+  - **Phase 2 - Boundary Smoothing:** WFC-based transition smoothing only at biome boundaries for natural edges
+  - **Performance Optimization:** Significantly faster than full WFC while maintaining pattern quality
+
+### Enhanced Biome System
+- **Six Distinct Biomes:** Expanded from 3 to 6 biomes with unique characteristics
+  - **Water:** 100% water terrain, no resources (lakes, rivers)
+  - **Barren:** Normal terrain, sparse grass (10% chance) - arid regions
+  - **Rocky:** 100% rocky terrain, no resources - impassable mountains for omnivores
+  - **Grassland:** Normal terrain, rich grass (70%), bushes (20%), berries (5%) - primary habitat
+  - **Forest:** Normal terrain, dense bushes (50%), moderate grass (25%), berries (10%) - reduces sight
+  - **Fertile:** Normal terrain, abundant berries (60%), bushes (25%), grass (15%) - high-value areas
+
+### Terrain vs Resource Separation
+- **Architectural Redesign:** Complete separation of terrain types from resource types
+  - **Terrain System:** New terrain types (water, rocky, normal) affecting movement and stats
+  - **Resource System:** Enhanced with bush resource alongside grass and berries
+  - **Dual-Layer Rendering:** Terrain renders as base layer, resources render on top
+
+### Movement & Terrain Integration
+- **Terrain Movement Restrictions:** Rocky terrain blocks omnivore movement, water slows all entities to 50% speed
+- **Stat Modifiers:** Terrain affects entity speed and sight radius through metabolism system
+- **Forest Sight Penalty:** 50% sight reduction for herbivores and omnivores in forest biomes
+- **System Integration:** Movement system checks terrain accessibility, metabolism applies modifiers
+
+### Asset & Rendering Updates
+- **New Texture Support:** Added water_tile.png, rocky_tile.png, bush_tile.png texture loading
+- **Rendering Order:** Proper terrain-first, resource-second rendering for visual correctness
+- **Texture Validation:** Error handling for missing texture files with fallback systems
+
 ## v2.12: Entity Detail Cam & Critical Bug Fixes
 **Date:** June 2025
 ### Entity Detail Camera System

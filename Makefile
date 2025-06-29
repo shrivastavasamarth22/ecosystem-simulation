@@ -18,6 +18,7 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/core/World.cpp \
           $(SRC_DIR)/core/EntityManager.cpp \
           $(SRC_DIR)/core/Random.cpp \
+          $(SRC_DIR)/core/WFCGenerator.cpp \
           $(SRC_DIR)/systems/AISystem.cpp \
           $(SRC_DIR)/systems/MovementSystem.cpp \
           $(SRC_DIR)/systems/ActionSystem.cpp \
@@ -37,6 +38,7 @@ OBJECTS = $(BUILD_DIR)/main.o \
           $(BUILD_DIR)/World.o \
           $(BUILD_DIR)/EntityManager.o \
           $(BUILD_DIR)/Random.o \
+          $(BUILD_DIR)/WFCGenerator.o \
           $(BUILD_DIR)/AISystem.o \
           $(BUILD_DIR)/MovementSystem.o \
           $(BUILD_DIR)/ActionSystem.o \

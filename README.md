@@ -4,6 +4,15 @@ A high-performance C++ simulation that models complex predator-prey and **resour
 
 ## Latest Updates
 
+- **v2.13: Wave Function Collapse Terrain Generation & Enhanced Biome System**
+    - **Wave Function Collapse (WFC) Implementation:** Replaced Voronoi diagram biome generation with a sophisticated WFC algorithm that creates more natural, realistic terrain patterns with proper adjacency rules between biome types.
+    - **Multi-Scale Terrain Generation:** Implemented hybrid approach using large region assignment (15x15 tile blocks) followed by WFC-based boundary smoothing, creating coherent biome areas instead of fragmented individual tiles.
+    - **Enhanced Biome Diversity:** Expanded from 3 to 6 distinct biomes (Water, Barren, Rocky, Grassland, Forest, Fertile) with unique terrain/resource combinations and realistic adjacency relationships.
+    - **Terrain vs Resource Separation:** Complete architectural redesign separating terrain types (affecting movement/stats) from resource types (consumable items), enabling richer environmental interactions.
+    - **New Terrain System:** Added water terrain (slows movement), rocky terrain (blocks omnivores), and normal terrain with proper movement restrictions and stat modifiers integrated into movement and metabolism systems.
+    - **Bush Resource Addition:** Introduced bush resource type alongside existing grass and berries, with proper texture support and biome-specific distribution patterns.
+    - **Intelligent Adjacency Rules:** WFC uses realistic biome transition rules (e.g., water connects to grassland/forest for rivers, rocky areas near forests for mountains) creating natural-looking landscapes.
+    - **Robust Fallback System:** If WFC generation fails due to constraint conflicts, system gracefully falls back to random generation ensuring simulation always starts successfully.
 - **v2.12: Entity Detail Cam & Critical Bug Fixes**
     - **Entity Detail Camera System:** Implemented comprehensive entity inspection feature - click any entity to enter detail view mode with camera follow and real-time information panel showing health, energy, AI state, family relationships, and detailed stats.
     - **Parent-Child Protection for Carnivores:** Fixed critical bug where carnivores would immediately attack their own newborn offspring. Added parent tracking system that prevents family conflicts until offspring reach independence age (8 turns).
@@ -39,7 +48,7 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Dynamic Spatial Partitioning:** Uses an auto-optimizing grid-based spatial partitioning (`World::spatial_grid`) that calculates optimal cell sizes based on world dimensions and entity density for efficient, near O(1) neighbor finding.
 - **View Frustum Culling:** Advanced rendering optimization that only processes visible tiles and entities, providing dramatic performance improvements for large worlds (80-95% rendering speedup when zoomed in).
 - **Optimized Asset Pipeline:** Uses appropriately-sized textures (40×40 for tiles, 64×64 for entities) with fixed scaling factors to minimize GPU memory usage and eliminate dynamic scaling overhead.
-- **Biome-Based Terrain Generation:** The world is procedurally generated using a Voronoi diagram to create distinct, irregular biomes (Forest, Grassland, Barren). Each biome has a unique resource profile, influencing entity distribution and creating strategic points of interest.
+- **Biome-Based Terrain Generation:** The world is procedurally generated using Wave Function Collapse (WFC) algorithm to create natural, realistic terrain with proper adjacency rules. Six distinct biomes (Water, Barren, Rocky, Grassland, Forest, Fertile) each have unique terrain and resource profiles, with multi-scale generation creating large coherent regions rather than scattered individual tiles.
 
 ### Entity Behavior & Survival
 - **Intelligent Agent Behavior:** Entities possess states processed by the AI System (`WANDERING`, `FLEEING`, `CHASING`, `PACK_HUNTING`, `HERDING`, `SEEKING_FOOD`) with distance-based target selection for optimal decision-making.
@@ -51,7 +60,7 @@ Entities in this simulation perceive their world, actively seek out food resourc
 - **Comprehensive Aging System:** As entities grow older, their base stats (like speed, damage, sight) decline progressively after their prime age using dedicated aging penalties. This creates realistic lifecycle dynamics where older entities become less effective and more vulnerable, with species-specific aging rates that influence hunting strategies and population dynamics.
 
 ### Ecological & Social Dynamics
-- **Resource System:** The world grid contains consumable, regenerating resources (starting with "Grass" and "Berries"). Entities must actively seek out specific resource types and consume them via the Action System to gain energy based on the resource's nutritional value. Over-consumption leads to local depletion, driving migration and starvation.
+- **Advanced Resource & Terrain System:** The world features a dual-layer system with terrain types (water, rocky, normal) affecting movement speed and accessibility, and resource types (grass, berries, bush) providing consumable energy. Terrain restrictions prevent certain animal types from accessing specific areas (e.g., omnivores blocked by rocky terrain), while terrain modifiers affect movement speed and sight radius.
 - **Age-Based Nutritional Value:** The energy gained from a kill is dynamically calculated based on the age and type of the killed entity, making older, weaker ones a lower-reward target and influencing predator hunting strategies.
 - **Intelligent Herding Behavior:** Herbivore entities possess a `HERDING` state and actively seek out the closest herd members to form optimal groups. Herd aging reduction calculations are processed in a thread-safe manner to prevent race conditions while maintaining performance.
 - **Herd Aging Reduction:** Being in a herd provides percentage-based aging penalty reduction (8% per member, max 50%), representing "safety in numbers" and community wisdom. This prevents health inflation while maintaining strategic herding benefits and ensuring natural lifespans.
@@ -90,7 +99,8 @@ ecosystem-simulation/
 │   ├── core/                     # Core simulation logic
 │   │   ├── World.cpp            # Manages grid, spatial partitioning, orchestrates system execution
 │   │   ├── EntityManager.cpp    # Central data store (SoA) and entity lifecycle management
-│   │   └── Random.cpp           # Global random number generator
+│   │   ├── Random.cpp           # Global random number generator
+│   │   └── WFCGenerator.cpp     # Wave Function Collapse terrain generation algorithm
 │   ├── systems/                  # Modular simulation systems
 │   │   ├── AISystem.cpp         # AI decision-making and behavior states
 │   │   ├── MovementSystem.cpp   # Entity movement and pathfinding
@@ -99,9 +109,10 @@ ecosystem-simulation/
 │   │   ├── ReproductionSystem.cpp # Entity reproduction logic
 │   │   └── AnimationSystem.cpp  # Position capture and animation state management
 │   ├── resources/                # Resource and environment management
-│   │   ├── Resource.cpp         # Resource type definitions (Grass, Berries)
-│   │   ├── Tile.cpp             # Individual grid tile management
-│   │   └── Biome.cpp            # Biome type definitions (Forest, Grassland, etc.)
+│   │   ├── Resource.cpp         # Resource type definitions (Grass, Berries, Bush)
+│   │   ├── Tile.cpp             # Individual grid tile management with terrain support
+│   │   ├── Biome.cpp            # Biome type definitions (Water, Rocky, Forest, etc.)
+│   │   └── Terrain.cpp          # Terrain type definitions and movement rules
 │   └── graphics/                 # Rendering and visualization
 │       ├── GraphicsRenderer.cpp # SFML window, textures, UI rendering, animation interpolation
 │       ├── Camera.cpp           # Handles camera movement, zoom, and input
@@ -109,6 +120,8 @@ ecosystem-simulation/
 │
 ├── include/                      # Header files
 │   ├── core/                     # Core component headers
+│   │   ├── WFCGenerator.h       # Wave Function Collapse algorithm interface
+│   │   └── ...                  # Other core headers
 │   ├── systems/                  # Individual system headers
 │   │   ├── AISystem.h           # AI system interface
 │   │   ├── MovementSystem.h     # Movement system interface
@@ -118,6 +131,8 @@ ecosystem-simulation/
 │   │   ├── AnimationSystem.h    # Animation system interface
 │   │   └── SimulationSystems.h  # Umbrella header (backward compatibility)
 │   ├── resources/                # Resource headers
+│   │   ├── Terrain.h            # Terrain type definitions and movement rules
+│   │   └── ...                  # Other resource headers
 │   ├── graphics/                 # Graphics headers
 │       ├── GraphicsRenderer.h # Main renderer class
 │       ├── Camera.h           # Camera class header

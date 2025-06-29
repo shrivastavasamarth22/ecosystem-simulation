@@ -5,6 +5,7 @@
 #include "EntityManager.h"
 #include "common/AnimalTypes.h"
 #include "resources/Biome.h" // <-- Include Biome header
+#include "core/WFCGenerator.h" // <-- Include WFC Generator
 #include <vector>
 #include <memory>
 #include <cmath>
