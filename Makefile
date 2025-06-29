@@ -27,6 +27,7 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/resources/Resource.cpp \
           $(SRC_DIR)/resources/Tile.cpp \
           $(SRC_DIR)/resources/Biome.cpp \
+          $(SRC_DIR)/resources/Terrain.cpp \
           $(SRC_DIR)/graphics/GraphicsRenderer.cpp \
           $(SRC_DIR)/graphics/Camera.cpp \
           $(SRC_DIR)/graphics/UIManager.cpp
@@ -45,6 +46,7 @@ OBJECTS = $(BUILD_DIR)/main.o \
           $(BUILD_DIR)/Resource.o \
           $(BUILD_DIR)/Tile.o \
           $(BUILD_DIR)/Biome.o \
+          $(BUILD_DIR)/Terrain.o \
           $(BUILD_DIR)/GraphicsRenderer.o \
           $(BUILD_DIR)/Camera.o \
           $(BUILD_DIR)/UIManager.o

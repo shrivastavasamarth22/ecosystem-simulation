@@ -14,5 +14,6 @@ struct ResourceType {
 
 extern const ResourceType RESOURCE_GRASS;
 extern const ResourceType RESOURCE_BERRIES;
+extern const ResourceType RESOURCE_BUSH;
 
 #endif // RESOURCE_H

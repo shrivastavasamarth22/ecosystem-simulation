@@ -35,20 +35,26 @@ namespace MovementSystem {
             int new_x = data.x[entity_id] + move_dx;
             int new_y = data.y[entity_id] + move_dy;
 
-            // Check world boundaries and only update if both coordinates are valid
-            // This prevents partial updates that can cause "teleporting" behavior
+            // Check world boundaries and terrain restrictions
             bool x_valid = (new_x >= 0 && new_x < world.getWidth());
             bool y_valid = (new_y >= 0 && new_y < world.getHeight());
             
-            if (x_valid) {
+            // Check terrain accessibility if coordinates are valid
+            bool terrain_accessible = true;
+            if (x_valid && y_valid) {
+                const Tile& target_tile = world.getTile(new_x, new_y);
+                terrain_accessible = target_tile.canMove(data.type[entity_id]);
+            }
+            
+            if (x_valid && terrain_accessible) {
                 data.x[entity_id] = new_x;
             }
-            if (y_valid) {
+            if (y_valid && terrain_accessible) {
                 data.y[entity_id] = new_y;
             }
             
-            // If we can't move in either direction due to boundaries, stop trying
-            if (!x_valid && !y_valid) {
+            // If we can't move in either direction due to boundaries or terrain, stop trying
+            if ((!x_valid || !terrain_accessible) && (!y_valid || !terrain_accessible)) {
                 break;
             }
 
@@ -98,11 +104,21 @@ namespace MovementSystem {
             int new_x = data.x[entity_id] + move_dx;
             int new_y = data.y[entity_id] + move_dy;
 
-            // Check world boundaries before updating position
-             if (new_x >= 0 && new_x < world.getWidth()) {
+            // Check world boundaries and terrain restrictions before updating position
+            bool x_valid = (new_x >= 0 && new_x < world.getWidth());
+            bool y_valid = (new_y >= 0 && new_y < world.getHeight());
+            
+            // Check terrain accessibility if coordinates are valid
+            bool terrain_accessible = true;
+            if (x_valid && y_valid) {
+                const Tile& target_tile = world.getTile(new_x, new_y);
+                terrain_accessible = target_tile.canMove(data.type[entity_id]);
+            }
+            
+            if (x_valid && terrain_accessible) {
                 data.x[entity_id] = new_x;
             }
-            if (new_y >= 0 && new_y < world.getHeight()) {
+            if (y_valid && terrain_accessible) {
                 data.y[entity_id] = new_y;
             }
         }
@@ -117,9 +133,15 @@ namespace MovementSystem {
             int new_x = data.x[entity_id] + dist(rng);
             int new_y = data.y[entity_id] + dist(rng);
 
-            if (new_x >= 0 && new_x < world.getWidth() && new_y >= 0 && new_y < world.getHeight()) {
-                data.x[entity_id] = new_x;
-                data.y[entity_id] = new_y;
+            // Check boundaries and terrain accessibility
+            if (new_x >= 0 && new_x < world.getWidth() && 
+                new_y >= 0 && new_y < world.getHeight()) {
+                
+                const Tile& target_tile = world.getTile(new_x, new_y);
+                if (target_tile.canMove(data.type[entity_id])) {
+                    data.x[entity_id] = new_x;
+                    data.y[entity_id] = new_y;
+                }
             }
         }
     }

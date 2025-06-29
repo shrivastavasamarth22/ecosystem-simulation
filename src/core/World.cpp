@@ -2,6 +2,7 @@
 #include "resources/Resource.h"
 #include "resources/Tile.h"
 #include "resources/Biome.h"
+#include "resources/Terrain.h"
 #include "systems/SimulationSystems.h"
 #include "common/AnimalConfig.h"
 #include "core/Random.h"
@@ -60,7 +61,7 @@ void World::init(int initial_herbivores, int initial_carnivores, int initial_omn
 
 void World::generateBiomes() {
     // 1. Define Biome Seed Points
-    const int num_biome_seeds = 40; // More seeds = smaller, more numerous biomes
+    const int num_biome_seeds = 150; // Increased for more varied terrain and better water visibility
     std::vector<std::pair<sf::Vector2i, const BiomeType*>> biome_seeds;
 
     std::uniform_int_distribution<int> distX(0, width - 1);
@@ -72,11 +73,17 @@ void World::generateBiomes() {
         float chance = dist_chance(rng);
 
         const BiomeType* chosen_biome;
-        if (chance < 0.025f) { // 5% chance for Forest (rarest)
+        if (chance < 0.15f) { // 15% chance for Water (increased for visibility)
+            chosen_biome = &BIOME_WATER;
+        } else if (chance < 0.25f) { // 10% chance for Rocky
+            chosen_biome = &BIOME_ROCKY;
+        } else if (chance < 0.35f) { // 10% chance for Fertile
+            chosen_biome = &BIOME_FERTILE;
+        } else if (chance < 0.50f) { // 15% chance for Forest
             chosen_biome = &BIOME_FOREST;
-        } else if (chance < 0.15f) { // 40% chance for Grassland
+        } else if (chance < 0.75f) { // 25% chance for Grassland
             chosen_biome = &BIOME_GRASSLAND;
-        } else { // 55% chance for Barren (most common)
+        } else { // 25% chance for Barren
             chosen_biome = &BIOME_BARREN;
         }
         biome_seeds.push_back({point, chosen_biome});
@@ -101,15 +108,46 @@ void World::generateBiomes() {
 }
 
 void World::seedResources() {
-    std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
+    // First, place terrain based on biome terrain distribution
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            const BiomeType* biome = grid[r][c].getBiome();
+            if (!biome) continue;
+
+            std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
+            float chance = dist_chance(rng);
+            float cumulative_prob = 0.0f;
+
+            // Place terrain first
+            for (const auto& pair : biome->terrain_distribution) {
+                const TerrainType* terrain = pair.first;
+                float probability = pair.second;
+                cumulative_prob += probability;
+
+                if (chance < cumulative_prob) {
+                    grid[r][c].setTerrain(terrain);
+                    break;
+                }
+            }
+
+            // If no terrain was set, default to normal terrain
+            if (!grid[r][c].getTerrain()) {
+                grid[r][c].setTerrain(&TERRAIN_NORMAL);
+            }
+        }
+    }
+
+    // Then, place resources based on biome resource distribution
     std::uniform_real_distribution<float> dist_grass_amount(RESOURCE_GRASS.max_amount / 2, RESOURCE_GRASS.max_amount);
     std::uniform_real_distribution<float> dist_berry_amount(RESOURCE_BERRIES.max_amount / 2, RESOURCE_BERRIES.max_amount);
+    std::uniform_real_distribution<float> dist_bush_amount(RESOURCE_BUSH.max_amount / 2, RESOURCE_BUSH.max_amount);
 
     for (int r = 0; r < height; ++r) {
         for (int c = 0; c < width; ++c) {
             const BiomeType* biome = grid[r][c].getBiome();
             if (!biome) continue;
 
+            std::uniform_real_distribution<float> dist_chance(0.0f, 1.0f);
             float chance = dist_chance(rng);
             float cumulative_prob = 0.0f;
 
@@ -125,6 +163,8 @@ void World::seedResources() {
                         initial_amount = dist_grass_amount(rng);
                     } else if (resource == &RESOURCE_BERRIES) {
                         initial_amount = dist_berry_amount(rng);
+                    } else if (resource == &RESOURCE_BUSH) {
+                        initial_amount = dist_bush_amount(rng);
                     }
                     grid[r][c].setResource(resource, initial_amount);
                     break; // Move to the next tile once a resource is placed

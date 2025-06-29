@@ -1,6 +1,7 @@
 #include "graphics/GraphicsRenderer.h"
 #include "resources/Resource.h"
 #include "resources/Tile.h"
+#include "resources/Terrain.h"
 #include "core/EntityManager.h"
 #include "resources/Biome.h"
 #include <iostream>
@@ -11,7 +12,12 @@
 const std::string ASSETS_PATH = "assets/";
 const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/empty_tile.png";
 const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/grass_tile.png";
-const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/berry_tile.png"; 
+const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/berry_tile.png";
+const std::string BUSH_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/bush_tile.png";
+
+// --- Terrain Texture Paths ---
+const std::string WATER_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/water_tile.png";
+const std::string ROCKY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/rocky_tile.png"; 
 
 // --- Animal Texture Paths ---
 const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/herbivore.png";
@@ -35,11 +41,24 @@ void GraphicsRenderer::init(unsigned int window_width, unsigned int window_heigh
     if (!m_empty_tile_texture.loadFromFile(EMPTY_TILE_TEXTURE_PATH)) {
         std::cerr << "Error loading empty tile texture: " << EMPTY_TILE_TEXTURE_PATH << std::endl;
     }
+    
+    // Load resource textures
     if (!m_resource_tile_textures[&RESOURCE_GRASS].loadFromFile(GRASS_TILE_TEXTURE_PATH)) {
          std::cerr << "Error loading grass texture: " << GRASS_TILE_TEXTURE_PATH << std::endl;
     }
     if (!m_resource_tile_textures[&RESOURCE_BERRIES].loadFromFile(BERRY_TILE_TEXTURE_PATH)) {
          std::cerr << "Error loading berry texture: " << BERRY_TILE_TEXTURE_PATH << std::endl;
+    }
+    if (!m_resource_tile_textures[&RESOURCE_BUSH].loadFromFile(BUSH_TILE_TEXTURE_PATH)) {
+         std::cerr << "Error loading bush texture: " << BUSH_TILE_TEXTURE_PATH << std::endl;
+    }
+    
+    // Load terrain textures
+    if (!m_terrain_tile_textures[&TERRAIN_WATER].loadFromFile(WATER_TILE_TEXTURE_PATH)) {
+         std::cerr << "Error loading water texture: " << WATER_TILE_TEXTURE_PATH << std::endl;
+    }
+    if (!m_terrain_tile_textures[&TERRAIN_ROCKY].loadFromFile(ROCKY_TILE_TEXTURE_PATH)) {
+         std::cerr << "Error loading rocky texture: " << ROCKY_TILE_TEXTURE_PATH << std::endl;
     }
 
     // --- Load Animal Textures ---
@@ -116,13 +135,26 @@ void GraphicsRenderer::drawWorld(const World& world) {
         for (int x = start_x; x <= end_x; ++x) {
             const Tile& tile = world.getTile(x, y);
 
-            // 1. Draw the base empty tile texture for the grid background
-            sf::Sprite background_sprite;
-            background_sprite.setTexture(m_empty_tile_texture);
-            background_sprite.setPosition(x * m_tile_size, y * m_tile_size);
-            // Optimized scaling: 40x40 texture to 20x20 tile
-            background_sprite.setScale(0.5f, 0.5f);
-            m_window.draw(background_sprite);
+            // 1. Draw the terrain texture as the base
+            sf::Sprite terrain_sprite;
+            const TerrainType* terrain = tile.getTerrain();
+            
+            if (terrain && terrain != &TERRAIN_NORMAL) {
+                // Use specific terrain texture
+                auto terrain_it = m_terrain_tile_textures.find(terrain);
+                if (terrain_it != m_terrain_tile_textures.end()) {
+                    terrain_sprite.setTexture(terrain_it->second);
+                } else {
+                    terrain_sprite.setTexture(m_empty_tile_texture); // Fallback
+                }
+            } else {
+                // Use empty tile texture for normal terrain
+                terrain_sprite.setTexture(m_empty_tile_texture);
+            }
+            
+            terrain_sprite.setPosition(x * m_tile_size, y * m_tile_size);
+            terrain_sprite.setScale(0.5f, 0.5f); // 40x40 texture to 20x20 tile
+            m_window.draw(terrain_sprite);
 
             // 2. Draw the resource on top, if it exists
             if (tile.resource_type != nullptr && tile.resource_amount > 0.0f) {
@@ -131,8 +163,7 @@ void GraphicsRenderer::drawWorld(const World& world) {
                 if (it != m_resource_tile_textures.end()) {
                     resource_sprite.setTexture(it->second);
                     resource_sprite.setPosition(x * m_tile_size, y * m_tile_size);
-                    // Optimized scaling: 40x40 texture to 20x20 tile
-                    resource_sprite.setScale(0.5f, 0.5f);
+                    resource_sprite.setScale(0.5f, 0.5f); // 40x40 texture to 20x20 tile
                     m_window.draw(resource_sprite);
                 }
             }

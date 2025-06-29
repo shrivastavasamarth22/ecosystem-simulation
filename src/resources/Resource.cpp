@@ -15,3 +15,11 @@ const ResourceType RESOURCE_BERRIES = {
     3.0f, // Nutritional value
     'b' // Symbol to draw on the grid
 };
+
+const ResourceType RESOURCE_BUSH = {
+    "Bush",
+    7.0f, // Max amount (between grass and berries)
+    0.75f, // Regrowth rate per turn (between grass and berries)
+    2.0f, // Nutritional value (between grass and berries)
+    'B' // Symbol to draw on the grid
+};

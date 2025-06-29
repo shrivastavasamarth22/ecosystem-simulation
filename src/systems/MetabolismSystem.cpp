@@ -1,6 +1,7 @@
 #include "systems/MetabolismSystem.h"
 #include "common/AnimalConfig.h"
 #include "common/AnimalTypes.h"
+#include "resources/Biome.h"
 #include <algorithm>
 
 namespace MetabolismSystem {
@@ -79,6 +80,23 @@ namespace MetabolismSystem {
             data.current_damage[i] = data.base_damage[i] * age_penalty_factor;
             data.current_speed[i] = std::max(1.0f, data.base_speed[i] * age_penalty_factor); // Minimum speed of 1
             data.current_sight_radius[i] = std::max(1.0f, data.base_sight_radius[i] * age_penalty_factor); // Minimum sight of 1
+
+            // NEW: Apply terrain modifiers
+            const Tile& current_tile = world.getTile(data.x[i], data.y[i]);
+            float terrain_speed_modifier = current_tile.getSpeedModifier();
+            float terrain_sight_modifier = current_tile.getSightModifier();
+            
+            // Apply terrain speed modifier
+            data.current_speed[i] = std::max(1.0f, data.current_speed[i] * terrain_speed_modifier);
+            
+            // Apply terrain sight modifier
+            data.current_sight_radius[i] = std::max(1.0f, data.current_sight_radius[i] * terrain_sight_modifier);
+            
+            // NEW: Forest sight hindrance for herbivores and omnivores
+            const BiomeType* biome = current_tile.getBiome();
+            if (biome == &BIOME_FOREST && (data.type[i] == AnimalType::HERBIVORE || data.type[i] == AnimalType::OMNIVORE)) {
+                data.current_sight_radius[i] *= 0.5f; // 50% sight reduction in forest
+            }
 
             if (data.max_energy[i] > 0.0f) {
                 float energy_percentage = data.energy[i] / data.max_energy[i];

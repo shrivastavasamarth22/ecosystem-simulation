@@ -2,13 +2,16 @@
 #define TILE_H
 
 #include "Resource.h"
+#include "common/AnimalTypes.h"
 #include <vector>
 #include <string>
 
 // Forward declaration for Animal to avoid include loop
 class Animal;
-// NEW: Forward declare BiomeType to avoid include loop with Biome.h
+// Forward declare BiomeType to avoid include loop with Biome.h
 struct BiomeType;
+// Forward declare TerrainType to avoid include loop with Terrain.h  
+struct TerrainType;
 
 struct Tile {
     // --- Animal Information ---
@@ -20,8 +23,11 @@ struct Tile {
     const ResourceType* resource_type = nullptr; // Pointer to the type of resource on this tile
     float resource_amount = 0.0f; // Current amount of resource on this tile
 
-    // --- NEW: Biome Information ---
+    // --- Biome Information ---
     const BiomeType* biome_type = nullptr;
+
+    // --- NEW: Terrain Information ---
+    const TerrainType* terrain_type = nullptr;
 
     int regrowth_timer = 0; // How many turns until regrowth
 
@@ -31,9 +37,16 @@ struct Tile {
     // Constructor to set resource type and initial amount
     Tile(const ResourceType* type, float initial_amount) : resource_type(type), resource_amount(initial_amount) {}
 
-    // --- NEW: Biome Management Methods ---
+    // --- Biome Management Methods ---
     void setBiome(const BiomeType* type);
     const BiomeType* getBiome() const;
+
+    // --- NEW: Terrain Management Methods ---
+    void setTerrain(const TerrainType* type);
+    const TerrainType* getTerrain() const;
+    bool canMove(AnimalType animal_type) const;
+    float getSpeedModifier() const;
+    float getSightModifier() const;
 
     // --- NEW: Resource Management ---
     void setResource(const ResourceType* type, float amount);

@@ -1,5 +1,6 @@
 #include "resources/Tile.h"
 #include "resources/Biome.h" // Include the full Biome definition
+#include "resources/Terrain.h" // Include the full Terrain definition
 
 float Tile::getConsumableAmount() const {
     // You can consume up to the current amount, up to a certain limit per turn if needed
@@ -25,6 +26,36 @@ const BiomeType* Tile::getBiome() const {
 void Tile::setResource(const ResourceType* type, float amount) {
     resource_type = type;
     resource_amount = amount;
+}
+
+void Tile::setTerrain(const TerrainType* type) {
+    terrain_type = type;
+}
+
+const TerrainType* Tile::getTerrain() const {
+    return terrain_type;
+}
+
+bool Tile::canMove(AnimalType animal_type) const {
+    if (!terrain_type) {
+        return true; // No terrain restriction
+    }
+    
+    // If allowed_types is empty, all animals can move
+    if (terrain_type->allowed_types.empty()) {
+        return true;
+    }
+    
+    // Check if this animal type is in the allowed set
+    return terrain_type->allowed_types.find(animal_type) != terrain_type->allowed_types.end();
+}
+
+float Tile::getSpeedModifier() const {
+    return terrain_type ? terrain_type->speed_modifier : 1.0f;
+}
+
+float Tile::getSightModifier() const {
+    return terrain_type ? terrain_type->sight_modifier : 1.0f;
 }
 
 void Tile::regrow() {
