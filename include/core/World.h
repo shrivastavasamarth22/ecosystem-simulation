@@ -4,8 +4,8 @@
 #include "resources/Tile.h"
 #include "EntityManager.h"
 #include "common/AnimalTypes.h"
-#include "resources/Biome.h" // <-- Include Biome header
-#include "core/WFCGenerator.h" // <-- Include WFC Generator
+#include "resources/Biome.h"
+#include "core/WFCGenerator.h"
 #include <vector>
 #include <memory>
 #include <cmath>
@@ -32,7 +32,6 @@ class World {
 
     // --- Private Helper Functions ---
     // These will be rewritten or replaced by Systems later
-    void cleanup(); // Will become m_entityManager.destroyDeadEntities() in the future
     void updateResources();
     void updateSpatialGrid();
     void generateBiomes(); // <-- New terrain generation function
@@ -44,7 +43,6 @@ class World {
 
     void init(int initial_herbivores, int initial_carnivores, int initial_omnivores);
     void update(); // This will be the home of our System calls
-    void draw() const;
     bool isEcosystemCollapsed() const;
 
     int getWidth() const { return width; }
