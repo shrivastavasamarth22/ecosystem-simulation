@@ -10,14 +10,14 @@
 
 // Define texture file paths
 const std::string ASSETS_PATH = "assets/";
-const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/empty_tile.png";
-const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/grass_tile.png";
-const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/berry_tile.png";
-const std::string BUSH_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/bush_tile.png";
+const std::string EMPTY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/barren.png";
+const std::string GRASS_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/grass.png";
+const std::string BERRY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/berry.png";
+const std::string BUSH_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/bush.png";
 
 // --- Terrain Texture Paths ---
-const std::string WATER_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/water_tile.png";
-const std::string ROCKY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/rocky_tile.png"; 
+const std::string WATER_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/water.png";
+const std::string ROCKY_TILE_TEXTURE_PATH = ASSETS_PATH + "textures/rocky.png"; 
 
 // --- Animal Texture Paths ---
 const std::string HERBIVORE_TEXTURE_PATH = ASSETS_PATH + "textures/herbivore.png";
